@@ -39,10 +39,11 @@ Terraform/
 ### 🚀 Flujo de despliegue
 
 1. `main`: validación compartida y higiene de merge.
-2. `minikube--deploy`: sincronización y despliegue en Ubuntu con Minikube.
+2. `minikube-deploy`: sincronización y despliegue en Ubuntu con Minikube.
 3. Validación técnica: comprobación del Ingress y del reverse proxy del servidor.
 4. Validación manual: el agente recibe aprobación por WhatsApp.
 5. `aws-deploy`: promoción a AWS con FE, BE y RDS.
+6. GitHub Actions puede disparar el branch `minikube-deploy` en Jenkins desde un runner `self-hosted`.
 
 ### 📊 Estructura de Base de Datos
 

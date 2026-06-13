@@ -31,7 +31,7 @@ pipeline {
             steps {
                 script {
                     env.PIPELINE_BRANCH = env.BRANCH_NAME ?: 'main'
-                    def allowedBranches = ['main', 'minikube--deploy', 'aws-deploy']
+                    def allowedBranches = ['main', 'minikube-deploy', 'aws-deploy']
                     if (!allowedBranches.contains(env.PIPELINE_BRANCH)) {
                         error("Unsupported branch for this multibranch pipeline: ${env.PIPELINE_BRANCH}")
                     }
@@ -88,7 +88,7 @@ pipeline {
 
         stage('Deploy Minikube on Ubuntu') {
             when {
-                branch 'minikube--deploy'
+                branch 'minikube-deploy'
             }
             steps {
                 withEnv([
@@ -107,7 +107,7 @@ pipeline {
 
         stage('Validate Reverse Proxy') {
             when {
-                branch 'minikube--deploy'
+                branch 'minikube-deploy'
             }
             steps {
                 sh '''
@@ -121,7 +121,7 @@ pipeline {
 
         stage('Notify ClawCode for AWS') {
             when {
-                branch 'minikube--deploy'
+                branch 'minikube-deploy'
             }
             steps {
                 sh """
