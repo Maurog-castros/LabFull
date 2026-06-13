@@ -7,7 +7,7 @@ on:
 
 jobs:
   trigger:
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Trigger Jenkins branch build
