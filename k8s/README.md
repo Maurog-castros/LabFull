@@ -1,4 +1,4 @@
-# Kubernetes Configuration for Beauty Center System
+# Kubernetes Configuration for LabFull
 
 This directory contains Kubernetes manifests for deploying the application.
 
@@ -6,7 +6,7 @@ This directory contains Kubernetes manifests for deploying the application.
 
 - Kubernetes cluster (minikube, EKS, GKE, AKS, or local)
 - `kubectl` configured to access your cluster
-- Docker image built and pushed (or available in cluster)
+- Docker image built locally in the Minikube daemon or pushed to a registry
 
 ## Quick Start
 
@@ -36,6 +36,7 @@ This directory contains Kubernetes manifests for deploying the application.
    kubectl apply -f backend-service.yaml
    kubectl apply -f frontend-deployment.yaml
    kubectl apply -f frontend-service.yaml
+   kubectl apply -f ingress.yaml
    ```
 
 4. **Check deployment status:**
@@ -50,11 +51,8 @@ This directory contains Kubernetes manifests for deploying the application.
 
 5. **Access the application:**
    ```bash
-   # For LoadBalancer service (cloud)
-   kubectl get svc frontend-service
-   
-   # For minikube
-   minikube service frontend-service
+   kubectl get ingress labfull-ingress
+   curl -H 'Host: LabFull.maurocastro.cl' http://<minikube-ip>/
    ```
 
 ## Directory Structure
@@ -68,7 +66,8 @@ k8s/
 ├── backend-deployment.yaml
 ├── backend-service.yaml
 ├── frontend-deployment.yaml
-└── frontend-service.yaml
+├── frontend-service.yaml
+└── ingress.yaml
 ```
 
 ## Customization

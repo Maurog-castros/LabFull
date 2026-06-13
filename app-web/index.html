@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DBLAB - Login</title>
+    <title>LabFull - Login</title>
     <style>
         * {
             margin: 0;
@@ -268,8 +268,8 @@
         <div class="scanlines"></div>
         
         <div class="login-header">
-            <h1>DBLAB</h1>
-            <p>Sistema de Acceso Cyberpunk v1.0</p>
+            <h1>LabFull</h1>
+            <p>Demo pública de CI/CD v1.0</p>
         </div>
 
         <form class="login-form" id="loginForm">
@@ -288,7 +288,7 @@
         </form>
 
         <div class="login-footer">
-            <p>© 2026 DBLAB | Sistema Seguro | <a href="#">Soporte Técnico</a></p>
+            <p>© 2026 LabFull | Sistema Seguro | <a href="#">Soporte Técnico</a></p>
         </div>
     </div>
 
@@ -310,11 +310,14 @@
                 }, 3000);
             }
 
+            const LABFULL_CONFIG = window.__LABFULL_CONFIG__ || {};
+            const API_BASE_URL = LABFULL_CONFIG.apiBaseUrl || '/api';
+
             // Validación de usuario (simulada - en producción se conectará a PostgreSQL)
             async function validateUser(username) {
                 try {
                     // Simular llamada al backend
-                    const response = await fetch('http://localhost:8000/personas', {
+                    const response = await fetch(`${API_BASE_URL}/personas`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
@@ -354,7 +357,7 @@
                     const isValid = await validateUser(username);
 
                     if (isValid === null) {
-                        showMessage('⚠️ Conectando al servidor DBLAB...', 'status-success');
+                        showMessage('⚠️ API no disponible. Modo demo activo.', 'status-success');
                         // Simular éxito si el backend no responde
                         setTimeout(() => {
                             showMessage(`✅ Acceso concedido: ${username}`, 'status-success');

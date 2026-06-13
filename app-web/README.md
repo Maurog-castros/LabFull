@@ -1,4 +1,4 @@
-# App Web - DBLAB
+# App Web - LabFull
 
 ## Interfaz de Login Cyberpunk
 
@@ -17,4 +17,5 @@ python -m http.server 8080
 ```
 
 ### Acceder a la aplicación
-- URL: http://localhost:8080
+- Local: http://localhost:8080
+- Pública: https://LabFull.maurocastro.cl

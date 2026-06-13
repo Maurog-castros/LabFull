@@ -59,20 +59,17 @@ pipeline {
 
         stage('Deploy BE') {
             steps {
-                withEnv([
-                    "AWS_RDS_HOST=${params.AWS_RDS_HOST}",
-                    "AWS_REGION=${params.AWS_REGION}"
-                ]) {
-                    sh '''
-                        set -eu
-                        echo "Deploying backend to AWS target in ${AWS_REGION}"
-                        if [ -n "${AWS_RDS_HOST}" ]; then
-                            echo "Backend will connect to RDS at ${AWS_RDS_HOST}"
-                        else
-                            echo "RDS endpoint not configured yet; using demo placeholder"
-                        fi
-                    '''
-                }
+                sh """
+                    AWS_REGION_VALUE='${params.AWS_REGION}'
+                    AWS_RDS_HOST_VALUE='${params.AWS_RDS_HOST}'
+                    set -eu
+                    echo "Deploying backend to AWS target in \$AWS_REGION_VALUE"
+                    if [ -n "\$AWS_RDS_HOST_VALUE" ]; then
+                        echo "Backend will connect to RDS at \$AWS_RDS_HOST_VALUE"
+                    else
+                        echo "RDS endpoint not configured yet; using demo placeholder"
+                    fi
+                """
             }
         }
 

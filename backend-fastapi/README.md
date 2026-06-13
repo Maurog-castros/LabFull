@@ -1,4 +1,4 @@
-# Backend FastAPI - DBLAB
+# Backend FastAPI - LabFull
 
 ## Instalación de dependencias
 ```bash
@@ -19,3 +19,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 | POST | `/personas` | Crear persona |
 | POST | `/usuarios` | Crear usuario |
 | GET | `/personas/{id}` | Obtener persona por ID |
+
+## Publicación
+
+En el flujo de Minikube, el backend queda expuesto internamente por `backend-service` y el frontend lo consume vía `/api`.

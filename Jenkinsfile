@@ -3,16 +3,21 @@ pipeline {
 
     options {
         disableConcurrentBuilds()
+        skipDefaultCheckout(true)
         timestamps()
         timeout(time: 30, unit: 'MINUTES')
     }
 
     parameters {
-        string(name: 'MINISTACK_HOST', defaultValue: '192.168.1.12', description: 'Ubuntu LAN host for the first deployment')
-        string(name: 'MINISTACK_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
+        string(name: 'MINIKUBE_HOST', defaultValue: '192.168.1.12', description: 'Ubuntu LAN host where Minikube runs')
+        string(name: 'MINIKUBE_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
+        string(name: 'MINIKUBE_PROFILE', defaultValue: 'labfull', description: 'Minikube profile used on the Ubuntu host')
+        string(name: 'PUBLIC_URL', defaultValue: 'https://LabFull.maurocastro.cl', description: 'Public URL exposed by the reverse proxy')
         string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: '', description: 'OpenClaw webhook URL used to notify the agent')
-        string(name: 'NEXT_PIPELINE_NAME', defaultValue: 'LabFull-AWS-CD', description: 'Downstream Jenkins job to start after agent approval')
+        string(name: 'NEXT_BRANCH_NAME', defaultValue: 'aws-deploy', description: 'Branch to promote after manual validation')
         string(name: 'NEXT_PIPELINE_SIGNAL', defaultValue: '1', description: 'Approval token the agent must return to start AWS')
+        string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region for the AWS deployment')
+        string(name: 'AWS_RDS_HOST', defaultValue: '', description: 'RDS endpoint or CNAME used by backend and DB migration')
     }
 
     environment {
@@ -22,9 +27,23 @@ pipeline {
     }
 
     stages {
+        stage('Resolve Branch') {
+            steps {
+                script {
+                    env.PIPELINE_BRANCH = env.BRANCH_NAME ?: 'main'
+                    def allowedBranches = ['main', 'minikube--deploy', 'aws-deploy']
+                    if (!allowedBranches.contains(env.PIPELINE_BRANCH)) {
+                        error("Unsupported branch for this multibranch pipeline: ${env.PIPELINE_BRANCH}")
+                    }
+                    currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.PIPELINE_BRANCH}"
+                    echo "Running multibranch flow for ${env.PIPELINE_BRANCH}"
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Maurog-castros/LabFull.git'
+                checkout scm
                 sh 'git rev-parse --short HEAD'
             }
         }
@@ -46,62 +65,70 @@ pipeline {
                             set -eu
                             git rev-parse --short HEAD
                             docker --version
+                            ssh -V
                             kubectl version --client=true
+                            curl --version | head -1
                         '''
                     }
                 }
             }
         }
 
-        stage('Demo Build') {
+        stage('Build Inputs') {
             steps {
                 sh '''
                     set -eu
-                    echo "Demo build: backend image ${BACKEND_IMAGE}"
-                    echo "Demo build: frontend image ${FRONTEND_IMAGE}"
-                    docker image ls | head -10
+                    echo "Backend image target: ${BACKEND_IMAGE}"
+                    echo "Frontend image target: ${FRONTEND_IMAGE}"
+                    echo "Kubernetes manifests:"
+                    find k8s -maxdepth 1 -type f | sort
                 '''
             }
         }
 
-        stage('Deploy Ministack on Ubuntu') {
+        stage('Deploy Minikube on Ubuntu') {
+            when {
+                branch 'minikube--deploy'
+            }
             steps {
                 withEnv([
-                    "MINISTACK_USER=${params.MINISTACK_USER}",
-                    "MINISTACK_HOST=${params.MINISTACK_HOST}"
+                    "MINIKUBE_USER=${params.MINIKUBE_USER}",
+                    "MINIKUBE_HOST=${params.MINIKUBE_HOST}",
+                    "MINIKUBE_PROFILE=${params.MINIKUBE_PROFILE}",
+                    "PUBLIC_URL=${params.PUBLIC_URL}"
                 ]) {
                     sh '''
                         set -eu
-                        mkdir -p "$HOME/.ssh"
-                        chmod 700 "$HOME/.ssh"
-                        ssh-keyscan -H "${MINISTACK_HOST}" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
-                        chmod 600 "$HOME/.ssh/known_hosts"
-                        if ssh -o BatchMode=yes -o StrictHostKeyChecking=yes ${MINISTACK_USER}@${MINISTACK_HOST} '
-                            set -eu
-                            echo "Deploying LabFull ministack on $(hostname)"
-                            test -d /opt/labfull/ministack || sudo mkdir -p /opt/labfull/ministack
-                            cd /opt/labfull/ministack
-                            docker compose version >/dev/null
-                            docker compose config >/dev/null
-                            echo "Frontend, backend and postgres are staged on Ubuntu"
-                        '; then
-                            echo "Ubuntu ministack deployment check completed"
-                        else
-                            echo "Ubuntu SSH is not configured in Jenkins yet; continuing with agent notification"
-                        fi
+                        bash ./scripts/deploy_minikube_labfull.sh
                     '''
                 }
             }
         }
 
-        stage('Notify ClawCode') {
+        stage('Validate Reverse Proxy') {
+            when {
+                branch 'minikube--deploy'
+            }
+            steps {
+                sh '''
+                    set -eu
+                    echo "Checking public URL: ${PUBLIC_URL}"
+                    curl -fkSs "${PUBLIC_URL}" | grep -qi "LabFull"
+                    curl -fkSs "${PUBLIC_URL}/api/health" | grep -qi '"status":"healthy"'
+                '''
+            }
+        }
+
+        stage('Notify ClawCode for AWS') {
+            when {
+                branch 'minikube--deploy'
+            }
             steps {
                 sh """
                     set -eu
                     if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
-                        next_url="https://jenkins.maurocastro.cl/job/${params.NEXT_PIPELINE_NAME}/buildWithParameters?APPROVAL_SIGNAL=${params.NEXT_PIPELINE_SIGNAL}"
                         payload=\$(cat <<EOF
-{"app":"${APP_NAME}","status":"success","message":"LabFull finished the Ubuntu ministack phase. When you finish manual validation, reply with ${params.NEXT_PIPELINE_SIGNAL} to start ${params.NEXT_PIPELINE_NAME} for AWS.","next_pipeline":"${params.NEXT_PIPELINE_NAME}","approval_signal":"${params.NEXT_PIPELINE_SIGNAL}","next_pipeline_url":"\$next_url"}
+{"app":"${APP_NAME}","status":"success","message":"LabFull is now live at ${params.PUBLIC_URL}. When validation passes, reply with ${params.NEXT_PIPELINE_SIGNAL} and promote branch ${params.NEXT_BRANCH_NAME} for AWS.","next_branch":"${params.NEXT_BRANCH_NAME}","approval_signal":"${params.NEXT_PIPELINE_SIGNAL}","public_url":"${params.PUBLIC_URL}"}
 EOF
 )
                         curl -fsS -X POST \\
@@ -114,11 +141,104 @@ EOF
                 """
             }
         }
+
+        stage('Approve AWS Deployment') {
+            when {
+                branch 'aws-deploy'
+            }
+            steps {
+                script {
+                    if (params.NEXT_PIPELINE_SIGNAL != '1') {
+                        error('AWS deployment not approved. The agent must send 1.')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy FE') {
+            when {
+                branch 'aws-deploy'
+            }
+            steps {
+                sh '''
+                    set -eu
+                    echo "Deploying frontend to AWS target"
+                    echo "Frontend image will be published and routed through AWS"
+                '''
+            }
+        }
+
+        stage('Deploy BE') {
+            when {
+                branch 'aws-deploy'
+            }
+            steps {
+                sh """
+                    AWS_REGION_VALUE='${params.AWS_REGION}'
+                    AWS_RDS_HOST_VALUE='${params.AWS_RDS_HOST}'
+                    set -eu
+                    echo "Deploying backend to AWS target in \$AWS_REGION_VALUE"
+                    if [ -n "\$AWS_RDS_HOST_VALUE" ]; then
+                        echo "Backend will connect to RDS at \$AWS_RDS_HOST_VALUE"
+                    else
+                        echo "RDS endpoint not configured yet; using demo placeholder"
+                    fi
+                """
+            }
+        }
+
+        stage('Deploy BD') {
+            when {
+                branch 'aws-deploy'
+            }
+            steps {
+                sh '''
+                    set -eu
+                    echo "Promoting database layer to AWS RDS"
+                    echo "In a real run this stage would manage schema, migrations and connection strings"
+                '''
+            }
+        }
+
+        stage('Notify ClawCode on AWS') {
+            when {
+                branch 'aws-deploy'
+            }
+            steps {
+                sh """
+                    set -eu
+                    if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
+                        payload=\$(cat <<EOF
+{"app":"${APP_NAME}","status":"success","message":"AWS deployment finished for branch aws-deploy: FE, BE and BD on RDS."}
+EOF
+)
+                        curl -fsS -X POST \\
+                            -H 'Content-Type: application/json' \\
+                            -d "\$payload" \\
+                            "${params.OPENCLAW_WEBHOOK_URL}"
+                    else
+                        echo "OPENCLAW_WEBHOOK_URL not configured; skipping notification"
+                    fi
+                """
+            }
+        }
+
+        stage('Main Branch Summary') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh '''
+                    set -eu
+                    echo "main branch is reserved for shared validation and merge hygiene"
+                '''
+            }
+        }
     }
 
     post {
         success {
-            echo 'Ubuntu stage completed and ClawCode was notified.'
+            echo "Multibranch flow completed for ${env.BRANCH_NAME ?: 'main'}."
         }
         failure {
             echo 'Pipeline failed. Review the stage that stopped the flow.'

@@ -25,7 +25,7 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
-          healthCheck:
+          readinessProbe:
             exec:
               command:
                 - pg_isready
@@ -33,6 +33,14 @@ spec:
                 - postgres
             initialDelaySeconds: 10
             periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 20
+            periodSeconds: 10
           resources:
             requests:
               memory: "256Mi"
