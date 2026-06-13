@@ -24,7 +24,6 @@ The workflow `.github/workflows/trigger-jenkins-minikube.yml` expects these GitH
 | `JENKINS_URL` | Base Jenkins URL |
 | `JENKINS_USER` | Jenkins user with API token access |
 | `JENKINS_API_TOKEN` | Jenkins API token |
-| `JENKINS_JOB_PATH` | Multibranch branch job path, for example `job/LabFull-Multibranch/job/minikube-deploy` |
 
 ## Expected flow
 

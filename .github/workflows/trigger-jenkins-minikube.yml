@@ -15,12 +15,11 @@ jobs:
           JENKINS_URL: ${{ secrets.JENKINS_URL }}
           JENKINS_USER: ${{ secrets.JENKINS_USER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
-          JENKINS_JOB_PATH: ${{ secrets.JENKINS_JOB_PATH }}
         run: |
           set -euo pipefail
 
-          if [ -z "${JENKINS_URL:-}" ] || [ -z "${JENKINS_USER:-}" ] || [ -z "${JENKINS_API_TOKEN:-}" ] || [ -z "${JENKINS_JOB_PATH:-}" ]; then
-            echo "Missing Jenkins secrets. Set JENKINS_URL, JENKINS_USER, JENKINS_API_TOKEN and JENKINS_JOB_PATH."
+          if [ -z "${JENKINS_URL:-}" ] || [ -z "${JENKINS_USER:-}" ] || [ -z "${JENKINS_API_TOKEN:-}" ]; then
+            echo "Missing Jenkins secrets. Set JENKINS_URL, JENKINS_USER and JENKINS_API_TOKEN."
             exit 1
           fi
 
@@ -29,4 +28,4 @@ jobs:
             --data-urlencode "cause=GitHub push to minikube-deploy" \
             --data-urlencode "gitBranch=${GITHUB_REF_NAME}" \
             --data-urlencode "gitCommit=${GITHUB_SHA}" \
-            "${JENKINS_URL}/${JENKINS_JOB_PATH}/buildWithParameters"
+            "${JENKINS_URL}/job/LabFull-CI-CD/buildWithParameters"
