@@ -7,6 +7,8 @@ pipeline {
         DB_NAME = 'DBLAB'
         BACKEND_PORT = '8000'
         WEB_PORT = '8080'
+        IMAGE_BACKEND = 'dblab-backend:latest'
+        IMAGE_WEB = 'dblab-web:latest'
     }
     
     options {
@@ -50,31 +52,51 @@ pipeline {
             }
         }
         
-        stage('Setup Backend') {
+        stage('Docker Build Backend') {
             steps {
-                echo '🐍 Configurando entorno Python...'
+                echo '🐳 Construyendo imagen del backend...'
                 dir('backend-fastapi') {
-                    sh '''
-                        python3 -m venv venv
-                        source venv/bin/activate
-                        pip install --upgrade pip
-                        pip install -r requirements.txt
-                    '''
+                    sh 'docker build -t ${IMAGE_BACKEND} .'
                 }
-                echo '✅ Backend configurado'
+                echo '✅ Imagen del backend construida: ' + IMAGE_BACKEND
             }
         }
         
-        stage('Setup Frontend') {
+        stage('Docker Build Frontend') {
             steps {
-                echo '🎨 Configurando entorno web...'
+                echo '🎨 Construyendo imagen del frontend...'
                 dir('app-web') {
-                    sh '''
-                        echo "Verificando index.html..."
-                        test -f index.html && echo "✅ index.html encontrado"
-                    '''
+                    sh 'docker build -t ${IMAGE_WEB} .'
                 }
-                echo '✅ Frontend listo'
+                echo '✅ Imagen del frontend construida: ' + IMAGE_WEB
+            }
+        }
+        
+        stage('Docker Health Check') {
+            steps {
+                echo '🏥 Verificando health-check de contenedores...'
+                
+                // Health check para backend
+                echo 'Backend health check...'
+                sh '''
+                    docker run -d --name test-backend -p 8000:8000 ${IMAGE_BACKEND}
+                    sleep 10
+                    docker ps --filter "name=test-backend" --format "{{.Status}}"
+                    docker stop test-backend
+                    docker rm test-backend
+                '''
+                
+                // Health check para frontend
+                echo 'Frontend health check...'
+                sh '''
+                    docker run -d --name test-web -p 8080:80 ${IMAGE_WEB}
+                    sleep 10
+                    docker ps --filter "name=test-web" --format "{{.Status}}"
+                    docker stop test-web
+                    docker rm test-web
+                '''
+                
+                echo '✅ Health-check completado'
             }
         }
         
@@ -116,12 +138,17 @@ pipeline {
     post {
         always {
             echo '🧹 Limpieza final...'
+            // Limpiar contenedores y imágenes viejas
+            sh '''
+                docker container prune -f || true
+                docker image prune -f || true
+            '''
             cleanWs()
         }
         
         success {
             echo '🎉 Pipeline completado exitosamente!'
-            echo '🚀 Siguiente paso: ejecutar el backend y frontend'
+            echo '🚀 Siguiente paso: ejecutar los contenedores con docker-compose'
         }
         
         failure {
