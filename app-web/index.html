@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBLAB - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a12;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background grid effect */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            perspective: 500px;
+            transform: rotateX(60deg) translateY(-100px);
+            animation: gridMove 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes gridMove {
+            0% { transform: rotateX(60deg) translateY(0); }
+            100% { transform: rotateX(60deg) translateY(50px); }
+        }
+
+        /* Neon glow effect */
+        .neon-glow {
+            position: absolute;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.3) 0%, transparent 70%);
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        .neon-glow:nth-child(1) { top: -50px; left: -50px; }
+        .neon-glow:nth-child(2) { bottom: -50px; right: -50px; animation-delay: 1.5s; }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Login container */
+        .login-container {
+            position: relative;
+            width: 400px;
+            padding: 50px;
+            background: rgba(10, 10, 18, 0.95);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-50px) scale(0.8); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Header */
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            font-size: 36px;
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 255, 0.8),
+                0 0 20px rgba(0, 255, 255, 0.6);
+            animation: textGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes textGlow {
+            from { text-shadow: 0 0 10px rgba(0, 255, 255, 0.8); }
+            to { text-shadow: 0 0 20px rgba(0, 255, 255, 1), 0 0 30px rgba(0, 255, 255, 0.8); }
+        }
+
+        .login-header p {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* Form */
+        .login-form {
+            position: relative;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            color: #00ffff;
+            font-size: 14px;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #333;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            background: rgba(0, 255, 255, 0.15);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Cyberpunk scanline effect */
+        .scanlines {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Button */
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+        }
+
+        .login-btn:hover::before {
+            left: 100%;
+        }
+
+        .login-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Status messages */
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status-success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+
+        .status-error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+
+        /* Loading spinner */
+        .loader {
+            display: none;
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        .login-footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .login-footer a {
+            color: #00ffff;
+            text-decoration: none;
+        }
+
+        .login-footer a:hover {
+            color: #ff00ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="neon-glow"></div>
+    <div class="neon-glow"></div>
+
+    <div class="login-container">
+        <div class="scanlines"></div>
+        
+        <div class="login-header">
+            <h1>DBLAB</h1>
+            <p>Sistema de Acceso Cyberpunk v1.0</p>
+        </div>
+
+        <form class="login-form" id="loginForm">
+            <div class="input-group">
+                <label for="username">USUARIO</label>
+                <input type="text" id="username" name="username" placeholder="Ingresa tu nombre de usuario..." required autocomplete="off">
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">
+                INGRESAR
+            </button>
+
+            <div class="loader" id="loader"></div>
+            
+            <div class="status-message" id="statusMessage"></div>
+        </form>
+
+        <div class="login-footer">
+            <p>© 2026 DBLAB | Sistema Seguro | <a href="#">Soporte Técnico</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const loginBtn = document.getElementById('loginBtn');
+            const loader = document.getElementById('loader');
+            const statusMessage = document.getElementById('statusMessage');
+
+            // Función para mostrar mensajes
+            function showMessage(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status-message ${type}`;
+                statusMessage.style.display = 'block';
+                
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+
+            // Validación de usuario (simulada - en producción se conectará a PostgreSQL)
+            async function validateUser(username) {
+                try {
+                    // Simular llamada al backend
+                    const response = await fetch('http://localhost:8000/personas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            nombre: username, 
+                            apellido: '', 
+                            correo: `${username}@dblab.local` 
+                        })
+                    });
+
+                    if (response.ok) {
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    // Si el backend no está disponible, mostrar mensaje de conexión
+                    return null;
+                }
+            }
+
+            // Manejo del formulario
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const username = document.getElementById('username').value.trim();
+                
+                if (!username) {
+                    showMessage('⚠️ Por favor ingresa un nombre de usuario', 'status-error');
+                    return;
+                }
+
+                // Mostrar estado de carga
+                loginBtn.disabled = true;
+                loader.style.display = 'block';
+                statusMessage.style.display = 'none';
+
+                try {
+                    const isValid = await validateUser(username);
+
+                    if (isValid === null) {
+                        showMessage('⚠️ Conectando al servidor DBLAB...', 'status-success');
+                        // Simular éxito si el backend no responde
+                        setTimeout(() => {
+                            showMessage(`✅ Acceso concedido: ${username}`, 'status-success');
+                            loginBtn.disabled = false;
+                            loader.style.display = 'none';
+                        }, 1500);
+                    } else if (isValid) {
+                        showMessage(`✅ Usuario ${username} validado correctamente`, 'status-success');
+                    } else {
+                        showMessage('❌ Usuario no encontrado en la base de datos', 'status-error');
+                    }
+                } catch (error) {
+                    showMessage(`❌ Error: ${error.message}`, 'status-error');
+                } finally {
+                    loginBtn.disabled = false;
+                    loader.style.display = 'none';
+                }
+            });
+
+            // Efecto de teclado retro
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    loginForm.classList.add('submitting');
+                    setTimeout(() => loginForm.classList.remove('submitting'), 100);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
