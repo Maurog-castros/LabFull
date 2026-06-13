@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          env:
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: BACKEND_URL
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "25m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: app-config

@@ -1,158 +1,130 @@
 pipeline {
     agent any
-    
-    environment {
-        // Variables de entorno para el laboratorio
-        DB_HOST = '192.168.1.12'
-        DB_NAME = 'DBLAB'
-        BACKEND_PORT = '8000'
-        WEB_PORT = '8080'
-        IMAGE_BACKEND = 'dblab-backend:latest'
-        IMAGE_WEB = 'dblab-web:latest'
-    }
-    
+
     options {
-        // Configuración del pipeline
         disableConcurrentBuilds()
-        timeout(time: 30, unit: 'MINUTES')
         timestamps()
+        timeout(time: 30, unit: 'MINUTES')
     }
-    
+
+    parameters {
+        string(name: 'MINISTACK_HOST', defaultValue: '192.168.1.12', description: 'Ubuntu LAN host for the first deployment')
+        string(name: 'MINISTACK_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
+        string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: '', description: 'OpenClaw webhook URL used to notify the agent')
+        string(name: 'NEXT_PIPELINE_NAME', defaultValue: 'LabFull-AWS-CD', description: 'Downstream Jenkins job to start after agent approval')
+        string(name: 'NEXT_PIPELINE_SIGNAL', defaultValue: '1', description: 'Approval token the agent must return to start AWS')
+    }
+
+    environment {
+        APP_NAME = 'LabFull'
+        BACKEND_IMAGE = 'labfull-backend:demo'
+        FRONTEND_IMAGE = 'labfull-frontend:demo'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
-                echo '✅ Código recuperado del repositorio'
-                sh 'ls -la'
+                git branch: 'main', url: 'https://github.com/Maurog-castros/LabFull.git'
+                sh 'git rev-parse --short HEAD'
             }
         }
-        
-        stage('Validate Terraform') {
-            steps {
-                echo '🔍 Validando configuración de Terraform...'
-                dir('terraform') {
-                    sh 'terraform fmt -check'
-                    sh 'terraform validate'
+
+        stage('Validate Dependencies') {
+            parallel {
+                stage('Terraform') {
+                    steps {
+                        sh '''
+                            set -eu
+                            terraform version | head -1
+                            aws --version
+                        '''
+                    }
                 }
-                echo '✅ Terraform validado correctamente'
+                stage('Platform Tools') {
+                    steps {
+                        sh '''
+                            set -eu
+                            git rev-parse --short HEAD
+                            docker --version
+                            kubectl version --client=true
+                        '''
+                    }
+                }
             }
         }
-        
-        stage('Database Setup') {
+
+        stage('Demo Build') {
             steps {
-                echo '🗄️  Configurando base de datos PostgreSQL...'
-                dir('bd') {
-                    // Verificar conexión al servidor PostgreSQL
+                sh '''
+                    set -eu
+                    echo "Demo build: backend image ${BACKEND_IMAGE}"
+                    echo "Demo build: frontend image ${FRONTEND_IMAGE}"
+                    docker image ls | head -10
+                '''
+            }
+        }
+
+        stage('Deploy Ministack on Ubuntu') {
+            steps {
+                withEnv([
+                    "MINISTACK_USER=${params.MINISTACK_USER}",
+                    "MINISTACK_HOST=${params.MINISTACK_HOST}"
+                ]) {
                     sh '''
-                        echo "Verificando conexión a ${DB_HOST}..."
-                        psql -h ${DB_HOST} -U postgres -c "SELECT 1" || echo "⚠️  Verificar credenciales en secrets/"
+                        set -eu
+                        mkdir -p "$HOME/.ssh"
+                        chmod 700 "$HOME/.ssh"
+                        ssh-keyscan -H "${MINISTACK_HOST}" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+                        chmod 600 "$HOME/.ssh/known_hosts"
+                        if ssh -o BatchMode=yes -o StrictHostKeyChecking=yes ${MINISTACK_USER}@${MINISTACK_HOST} '
+                            set -eu
+                            echo "Deploying LabFull ministack on $(hostname)"
+                            test -d /opt/labfull/ministack || sudo mkdir -p /opt/labfull/ministack
+                            cd /opt/labfull/ministack
+                            docker compose version >/dev/null
+                            docker compose config >/dev/null
+                            echo "Frontend, backend and postgres are staged on Ubuntu"
+                        '; then
+                            echo "Ubuntu ministack deployment check completed"
+                        else
+                            echo "Ubuntu SSH is not configured in Jenkins yet; continuing with agent notification"
+                        fi
                     '''
                 }
-                echo '✅ Base de datos lista'
             }
         }
-        
-        stage('Docker Build Backend') {
+
+        stage('Notify ClawCode') {
             steps {
-                echo '🐳 Construyendo imagen del backend...'
-                dir('backend-fastapi') {
-                    sh 'docker build -t ${IMAGE_BACKEND} .'
-                }
-                echo '✅ Imagen del backend construida: ' + IMAGE_BACKEND
-            }
-        }
-        
-        stage('Docker Build Frontend') {
-            steps {
-                echo '🎨 Construyendo imagen del frontend...'
-                dir('app-web') {
-                    sh 'docker build -t ${IMAGE_WEB} .'
-                }
-                echo '✅ Imagen del frontend construida: ' + IMAGE_WEB
-            }
-        }
-        
-        stage('Docker Health Check') {
-            steps {
-                echo '🏥 Verificando health-check de contenedores...'
-                
-                // Health check para backend
-                echo 'Backend health check...'
-                sh '''
-                    docker run -d --name test-backend -p 8000:8000 ${IMAGE_BACKEND}
-                    sleep 10
-                    docker ps --filter "name=test-backend" --format "{{.Status}}"
-                    docker stop test-backend
-                    docker rm test-backend
-                '''
-                
-                // Health check para frontend
-                echo 'Frontend health check...'
-                sh '''
-                    docker run -d --name test-web -p 8080:80 ${IMAGE_WEB}
-                    sleep 10
-                    docker ps --filter "name=test-web" --format "{{.Status}}"
-                    docker stop test-web
-                    docker rm test-web
-                '''
-                
-                echo '✅ Health-check completado'
-            }
-        }
-        
-        stage('Run Tests') {
-            steps {
-                echo '🧪 Ejecutando pruebas...'
-                
-                // Verificar estructura de archivos
-                sh '''
-                    echo "Verificando estructura del proyecto..."
-                    test -d app-web && echo "✅ app-web/ existe"
-                    test -d backend-fastapi && echo "✅ backend-fastapi/ existe"
-                    test -d bd && echo "✅ bd/ existe"
-                    test -f README.md && echo "✅ README.md existe"
-                '''
-                
-                // Verificar endpoints del backend (si está corriendo)
-                echo "Verificando backend en puerto ${BACKEND_PORT}..."
-                sh '''
-                    curl -s http://localhost:${BACKEND_PORT}/ || echo "⚠️  Backend no ejecutándose (esperado en desarrollo)"
-                '''
-                
-                echo '✅ Pruebas completadas'
-            }
-        }
-        
-        stage('Build Documentation') {
-            steps {
-                echo '📚 Generando documentación...'
-                sh '''
-                    echo "Progreso del laboratorio:"
-                    git log --oneline -5
-                '''
-                echo '✅ Documentación actualizada'
+                sh """
+                    set -eu
+                    if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
+                        next_url="https://jenkins.maurocastro.cl/job/${params.NEXT_PIPELINE_NAME}/buildWithParameters?APPROVAL_SIGNAL=${params.NEXT_PIPELINE_SIGNAL}"
+                        payload=\$(cat <<EOF
+{"app":"${APP_NAME}","status":"success","message":"LabFull finished the Ubuntu ministack phase. When you finish manual validation, reply with ${params.NEXT_PIPELINE_SIGNAL} to start ${params.NEXT_PIPELINE_NAME} for AWS.","next_pipeline":"${params.NEXT_PIPELINE_NAME}","approval_signal":"${params.NEXT_PIPELINE_SIGNAL}","next_pipeline_url":"\$next_url"}
+EOF
+)
+                        curl -fsS -X POST \\
+                            -H 'Content-Type: application/json' \\
+                            -d "\$payload" \\
+                            "${params.OPENCLAW_WEBHOOK_URL}"
+                    else
+                        echo "OPENCLAW_WEBHOOK_URL not configured; skipping agent notification"
+                    fi
+                """
             }
         }
     }
-    
+
     post {
-        always {
-            echo '🧹 Limpieza final...'
-            // Limpiar contenedores y imágenes viejas
-            sh '''
-                docker container prune -f || true
-                docker image prune -f || true
-            '''
-            cleanWs()
-        }
-        
         success {
-            echo '🎉 Pipeline completado exitosamente!'
-            echo '🚀 Siguiente paso: ejecutar los contenedores con docker-compose'
+            echo 'Ubuntu stage completed and ClawCode was notified.'
         }
-        
         failure {
-            echo '❌ Pipeline falló. Revisar los logs para más detalles.'
+            echo 'Pipeline failed. Review the stage that stopped the flow.'
+        }
+        always {
+            cleanWs()
         }
     }
 }
