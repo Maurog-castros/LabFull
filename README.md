@@ -1,18 +1,16 @@
-# DBLAB - Laboratorio Terraform
+# LabFull
 
-## 📋 English Version Below / Versión en Español Abajo
-
----
+Practical lab to train skills with Terraform, FastAPI and PostgreSQL.
 
 ## 🇪🇸 Descripción del Proyecto
 
-Laboratorio práctico para entrenar capacidades con Terraform, FastAPI y PostgreSQL.
+Laboratorio práctico para entrenar habilidades con Terraform, FastAPI y PostgreSQL.
 
 ### 🏗️ Estructura del Proyecto
 
 ```
 Terraform/
-├── app-web/              # Frontend HTML/CSS (Login Cyberpunk)
+├── app-web/              # Frontend HTML/CSS (Cyberpunk Login)
 │   ├── index.html        # Interfaz de login moderna
 │   └── README.md         # Documentación del frontend
 ├── backend-fastapi/      # Backend Python FastAPI
@@ -20,9 +18,9 @@ Terraform/
 │   ├── requirements.txt  # Dependencias de Python
 │   └── README.md         # Documentación del backend
 ├── bd/                   # Scripts PostgreSQL
-│   ├── init-db.sql       # Script de inicialización de DB (tablas personas, usuarios)
+│   ├── init-db.sql       # Script de inicialización (tablas personas, usuarios)
 │   └── .env.example      # Ejemplo de variables de entorno
-├── terraform/            # Infraestructura como código (Terraform)
+├── terraform/            # Infrastructure as Code (Terraform)
 │   ├── main.tf           # Configuración principal
 │   ├── variables.tf      # Variables definidas
 │   └── terraform.tfvars.example  # Ejemplo de variables
@@ -99,7 +97,7 @@ python -m http.server 8080
 | GET | `/` | Bienvenida y versión |
 | GET | `/health` | Health check |
 | POST | `/personas` | Crear persona |
-| POST | /`/usuarios` | Crear usuario |
+| POST | `/usuarios` | Crear usuario |
 | GET | `/personas/{id}` | Obtener persona por ID |
 
 ---
