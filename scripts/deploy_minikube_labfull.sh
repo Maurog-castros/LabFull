@@ -12,7 +12,6 @@ require_var() {
 
 require_var MINIKUBE_HOST
 require_var MINIKUBE_USER
-require_var MINIKUBE_PROFILE
 require_var PUBLIC_URL
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -45,12 +44,21 @@ set -euo pipefail
 
 export PATH="$HOME/.local/bin:$PATH"
 
+MINIKUBE_PROFILE="${MINIKUBE_PROFILE:-labfull}"
+
 echo "Working directory: ${REMOTE_DIR}"
 cd "${REMOTE_DIR}"
 
 command -v minikube >/dev/null
 command -v kubectl >/dev/null
 command -v docker >/dev/null
+
+if ! minikube profile list | grep -qE "^[[:space:]]*${MINIKUBE_PROFILE}[[:space:]]"; then
+  if minikube profile list | grep -qE "^[[:space:]]*labfull[[:space:]]"; then
+    echo "Requested profile '${MINIKUBE_PROFILE}' not found. Falling back to 'labfull'."
+    MINIKUBE_PROFILE="labfull"
+  fi
+fi
 
 if ! minikube status -p "${MINIKUBE_PROFILE}" >/dev/null 2>&1; then
   minikube start -p "${MINIKUBE_PROFILE}" --driver=docker
