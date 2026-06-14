@@ -13,8 +13,8 @@ data:
   
   # Jenkins configuration
   JENKINS_BASE_URL: "https://jenkins.maurocastro.cl"
-  JENKINS_JOB_PATH: "job/LabFull-CI-CD"
-  JENKINS_JOB_NAME: "LabFull-CI-CD"
+  JENKINS_JOB_PATH: "job/LabFull-platform-smoke"
+  JENKINS_JOB_NAME: "LabFull-platform-smoke"
   JENKINS_TIMEOUT_SECONDS: "8"
   
   # Frontend configuration (nginx upstream)

@@ -9,6 +9,8 @@ pipeline {
     }
 
     parameters {
+        string(name: 'gitBranch', defaultValue: '', description: 'Branch requested by GitHub Actions when this job is not multibranch')
+        string(name: 'gitCommit', defaultValue: '', description: 'Commit requested by GitHub Actions when this job is not multibranch')
         string(name: 'MINIKUBE_HOST', defaultValue: '192.168.1.12', description: 'Ubuntu LAN host where Minikube runs')
         string(name: 'MINIKUBE_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
         string(name: 'MINIKUBE_PROFILE', defaultValue: 'labfull', description: 'Minikube profile used on the Ubuntu host')
@@ -33,7 +35,8 @@ pipeline {
         stage('Resolve Branch') {
             steps {
                 script {
-                    env.PIPELINE_BRANCH = env.BRANCH_NAME ?: 'main'
+                    env.PIPELINE_BRANCH = env.BRANCH_NAME ?: (params.gitBranch?.trim() ?: 'main')
+                    env.PIPELINE_COMMIT = params.gitCommit?.trim() ?: ''
                     def allowedBranches = ['main', 'minikube-deploy', 'aws-deploy']
                     if (!allowedBranches.contains(env.PIPELINE_BRANCH)) {
                         error("Unsupported branch for this multibranch pipeline: ${env.PIPELINE_BRANCH}")
@@ -47,7 +50,17 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                sh 'git rev-parse --short HEAD'
+                sh '''
+                    set -eu
+                    if [ -z "${BRANCH_NAME:-}" ]; then
+                        git fetch origin "${PIPELINE_BRANCH}"
+                        git checkout -B "${PIPELINE_BRANCH}" "origin/${PIPELINE_BRANCH}"
+                    fi
+                    if [ -n "${PIPELINE_COMMIT:-}" ]; then
+                        git checkout "${PIPELINE_COMMIT}"
+                    fi
+                    git rev-parse --short HEAD
+                '''
             }
         }
 
@@ -106,7 +119,7 @@ pipeline {
 
         stage('Deploy Minikube on Ubuntu') {
             when {
-                branch 'minikube-deploy'
+                expression { env.PIPELINE_BRANCH == 'minikube-deploy' }
             }
             steps {
                 withEnv([
@@ -127,7 +140,7 @@ pipeline {
 
         stage('Validate Reverse Proxy') {
             when {
-                branch 'minikube-deploy'
+                expression { env.PIPELINE_BRANCH == 'minikube-deploy' }
             }
             steps {
                 sh '''
@@ -143,7 +156,7 @@ pipeline {
 
         stage('Notify ClawCode for Minikube') {
             when {
-                branch 'minikube-deploy'
+                expression { env.PIPELINE_BRANCH == 'minikube-deploy' }
             }
             steps {
                 script {
@@ -195,7 +208,7 @@ Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} p
 
         stage('Approve AWS Deployment') {
             when {
-                branch 'aws-deploy'
+                expression { env.PIPELINE_BRANCH == 'aws-deploy' }
             }
             steps {
                 script {
@@ -208,7 +221,7 @@ Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} p
 
         stage('Deploy FE') {
             when {
-                branch 'aws-deploy'
+                expression { env.PIPELINE_BRANCH == 'aws-deploy' }
             }
             steps {
                 sh '''
@@ -221,7 +234,7 @@ Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} p
 
         stage('Deploy BE') {
             when {
-                branch 'aws-deploy'
+                expression { env.PIPELINE_BRANCH == 'aws-deploy' }
             }
             steps {
                 sh """
@@ -240,7 +253,7 @@ Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} p
 
         stage('Deploy BD') {
             when {
-                branch 'aws-deploy'
+                expression { env.PIPELINE_BRANCH == 'aws-deploy' }
             }
             steps {
                 sh '''
@@ -253,7 +266,7 @@ Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} p
 
         stage('Notify ClawCode on AWS') {
             when {
-                branch 'aws-deploy'
+                expression { env.PIPELINE_BRANCH == 'aws-deploy' }
             }
             steps {
                 script {
@@ -304,7 +317,7 @@ Resumen ejecutivo: ${changeSummary}"""
 
         stage('Main Branch Summary') {
             when {
-                branch 'main'
+                expression { env.PIPELINE_BRANCH == 'main' }
             }
             steps {
                 sh '''
