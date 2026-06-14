@@ -18,12 +18,12 @@
 
 ## GitHub Actions bridge
 
-The workflow `.github/workflows/trigger-jenkins-minikube.yml` expects these GitHub secrets:
+The workflows `.github/workflows/trigger-jenkins-minikube.yml` and `.github/workflows/trigger-jenkins-aws.yml` expect these GitHub secrets:
 
 | Secret | Meaning |
 |--------|---------|
 | `JENKINS_URL` | Base Jenkins URL |
-| `JENKINS_JOB_NAME` | Name of the multibranch Jenkins job that contains `minikube-deploy` |
+| `JENKINS_JOB_NAME` | Name of the multibranch Jenkins job that contains the Jenkinsfile branches |
 | `JENKINS_USER` | Jenkins user with API token access |
 | `JENKINS_API_TOKEN` | Jenkins API token |
 | `OPENCLAW_WEBHOOK_URL` | Optional OpenClaw webhook passed to Jenkins for WhatsApp notification |
@@ -34,6 +34,7 @@ The workflow `.github/workflows/trigger-jenkins-minikube.yml` expects these GitH
 2. The pipeline validates the public URL and notifies OpenClaw.
 3. After manual approval, `aws-deploy` runs the AWS promotion stages.
 4. `GET /api/pipeline/latest` reads Jenkins and shows the latest status inside the web app.
+5. `GET /api/containers/status` shows the runtime inventory in the web app.
 
 ## Required runtime tools
 

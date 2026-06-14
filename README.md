@@ -43,7 +43,7 @@ Terraform/
 3. Validación técnica: comprobación del Ingress y del reverse proxy del servidor.
 4. Validación manual: el agente recibe aprobación por WhatsApp.
 5. `aws-deploy`: promoción a AWS con FE, BE y RDS.
-6. GitHub Actions dispara el branch `minikube-deploy` del job multibranch de Jenkins desde `ubuntu-latest` y, si existe el secret `OPENCLAW_WEBHOOK_URL`, lo pasa al pipeline para notificar a OpenClaw.
+6. GitHub Actions dispara el branch `minikube-deploy` y `aws-deploy` del job multibranch de Jenkins desde `ubuntu-latest` y, si existe el secret `OPENCLAW_WEBHOOK_URL`, lo pasa al pipeline para notificar a OpenClaw.
 7. La UI consulta `GET /api/pipeline/latest` y pinta el último build con hora de inicio, término, estado y stages.
 8. La UI consulta `GET /api/containers/status` y muestra el inventario de frontend, backend, PostgreSQL y Minikube/Ingress con detalle clicable.
 

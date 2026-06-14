@@ -109,6 +109,25 @@ EOF
     }
 
     post {
+        always {
+            script {
+                if (params.OPENCLAW_WEBHOOK_URL && env.OPENCLAW_STATUS != 'sent') {
+                    def buildResult = currentBuild.currentResult ?: 'UNKNOWN'
+                    sh """
+                        set -eu
+                        payload=\$(cat <<EOF
+{"app":"${APP_NAME}","status":"${buildResult.toLowerCase()}","message":"AWS pipeline finished for FE, BE and BD on RDS with result ${buildResult}."}
+EOF
+)
+                        curl -fsS -X POST \\
+                            -H 'Content-Type: application/json' \\
+                            -d "\$payload" \\
+                            "${params.OPENCLAW_WEBHOOK_URL}"
+                    """
+                    env.OPENCLAW_STATUS = 'sent'
+                }
+            }
+        }
         success {
             script {
                 def openclaw = env.OPENCLAW_STATUS ?: 'unknown'
