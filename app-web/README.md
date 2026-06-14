@@ -18,4 +18,4 @@ python -m http.server 8080
 
 ### Acceder a la aplicación
 - Local: http://localhost:8080
-- Pública: https://LabFull.maurocastro.cl
+- Pública: https://labfull.maurocastro.cl

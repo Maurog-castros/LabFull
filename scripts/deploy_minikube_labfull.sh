@@ -30,6 +30,7 @@ tar -C "$ROOT_DIR" -cf - \
   app-web \
   backend-fastapi \
   bd \
+  docker-compose.yml \
   k8s \
   scripts \
   README.md \

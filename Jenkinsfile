@@ -12,7 +12,7 @@ pipeline {
         string(name: 'MINIKUBE_HOST', defaultValue: '192.168.1.12', description: 'Ubuntu LAN host where Minikube runs')
         string(name: 'MINIKUBE_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
         string(name: 'MINIKUBE_PROFILE', defaultValue: 'labfull', description: 'Minikube profile used on the Ubuntu host')
-        string(name: 'PUBLIC_URL', defaultValue: 'https://LabFull.maurocastro.cl', description: 'Public URL exposed by the reverse proxy')
+        string(name: 'PUBLIC_URL', defaultValue: 'https://labfull.maurocastro.cl', description: 'Public URL exposed by the reverse proxy')
         string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: '', description: 'OpenClaw webhook URL used to notify the agent')
         string(name: 'NEXT_BRANCH_NAME', defaultValue: 'aws-deploy', description: 'Branch to promote after manual validation')
         string(name: 'NEXT_PIPELINE_SIGNAL', defaultValue: '1', description: 'Approval token the agent must return to start AWS')
