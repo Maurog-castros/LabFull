@@ -49,6 +49,21 @@ pipeline {
             }
         }
 
+        stage('Summarize Changes') {
+            steps {
+                script {
+                    env.LAST_COMMITS_SUMMARY = sh(
+                        returnStdout: true,
+                        script: '''
+                            set -eu
+                            git log --no-merges --pretty=format:'%s (%h)' -n 3
+                        '''
+                    ).trim().split('\n').findAll { it?.trim() }.join(' | ')
+                    env.MINIKUBE_ROUTE = params.PUBLIC_URL?.trim() ?: 'https://labfull.maurocastro.cl'
+                }
+            }
+        }
+
         stage('Validate Dependencies') {
             parallel {
                 stage('Terraform') {
@@ -120,26 +135,37 @@ pipeline {
             }
         }
 
-        stage('Notify ClawCode for AWS') {
+        stage('Notify ClawCode for Minikube') {
             when {
                 branch 'minikube-deploy'
             }
             steps {
                 script {
                     if (params.OPENCLAW_WEBHOOK_URL && params.OPENCLAW_WEBHOOK_TOKEN) {
+                        def changeSummary = env.LAST_COMMITS_SUMMARY ?: 'Sin commits recientes detectados.'
+                        def publicRoute = env.MINIKUBE_ROUTE ?: params.PUBLIC_URL
+                        def notificationText = """LabFull ya quedó arriba en ${publicRoute}.
+Ruta publicada en Minikube: ${publicRoute}
+Resumen ejecutivo: ${changeSummary}
+Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} para iniciar ${params.NEXT_BRANCH_NAME}."""
+                        def payload = groovy.json.JsonOutput.toJson([
+                            agentId: 'jenki',
+                            name: 'Jenki',
+                            deliver: true,
+                            channel: 'whatsapp',
+                            to: '+56929683524',
+                            message: notificationText,
+                        ])
                         sh """
                             set -eu
                             response_file=\"${env.WORKSPACE}/.openclaw-response-minikube.txt\"
                             rm -f \"\$response_file\"
-                            payload=\$(cat <<EOF
-{"agentId":"jenki","name":"Jenki","deliver":true,"channel":"whatsapp","to":"+56929683524","message":"LabFull ya quedó arriba en ${params.PUBLIC_URL}. Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} para iniciar ${params.NEXT_BRANCH_NAME}."}
-EOF
-)
+                            payload='${payload.replace("'", "'\"'\"'")}'
                             http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
                                 -H \"Authorization: Bearer ${params.OPENCLAW_WEBHOOK_TOKEN}\" \\
                                 -H 'Content-Type: application/json' \\
-                                -d "\$payload" \\
-                                "${params.OPENCLAW_WEBHOOK_URL}")
+                                -d \"\$payload\" \\
+                                \"${params.OPENCLAW_WEBHOOK_URL}\")
                             echo "OPENCLAW_HTTP_CODE=\$http_code"
                             if [ -f \"\$response_file\" ]; then
                                 echo "--- OPENCLAW_RESPONSE ---"
@@ -226,18 +252,28 @@ EOF
             steps {
                 script {
                     if (params.OPENCLAW_WEBHOOK_URL && params.OPENCLAW_WEBHOOK_TOKEN) {
+                        def changeSummary = env.LAST_COMMITS_SUMMARY ?: 'Sin commits recientes detectados.'
+                        def publicRoute = env.MINIKUBE_ROUTE ?: 'https://labfull.maurocastro.cl'
+                        def notificationText = """AWS deployment terminado para LabFull: FE, BE y BD/RDS listos.
+Ruta publicada en Minikube: ${publicRoute}
+Resumen ejecutivo: ${changeSummary}"""
+                        def payload = groovy.json.JsonOutput.toJson([
+                            agentId: 'jenki',
+                            name: 'Jenki',
+                            deliver: true,
+                            channel: 'whatsapp',
+                            to: '+56929683524',
+                            message: notificationText,
+                        ])
                         sh """
                             set -eu
                             response_file=\"${env.WORKSPACE}/.openclaw-response-aws.txt\"
                             rm -f \"\$response_file\"
-                            payload=\$(cat <<EOF
-{"agentId":"jenki","name":"Jenki","deliver":true,"channel":"whatsapp","to":"+56929683524","message":"AWS deployment terminado para LabFull: FE, BE y BD/RDS listos."}
-EOF
-)
+                            payload='${payload.replace("'", "'\"'\"'")}'
                             http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
                                 -H \"Authorization: Bearer ${params.OPENCLAW_WEBHOOK_TOKEN}\" \\
                                 -H 'Content-Type: application/json' \\
-                                -d "\$payload" \\
+                                -d \"\$payload\" \\
                                 "${params.OPENCLAW_WEBHOOK_URL}")
                             echo "OPENCLAW_HTTP_CODE=\$http_code"
                             if [ -f \"\$response_file\" ]; then
