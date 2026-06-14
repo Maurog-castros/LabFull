@@ -31,8 +31,8 @@ Terraform/
 
 | Componente | Descripción |
 |------------|-------------|
-| **Frontend** | Login cyberpunk con animaciones modernas, validación de usuario |
-| **Backend** | FastAPI con endpoints para personas, usuarios y alta transaccional |
+| **Frontend** | Login cyberpunk con panel de Jenkins, OpenClaw y stages |
+| **Backend** | FastAPI con endpoints para personas, usuarios, alta transaccional y Jenkins |
 | **Base de Datos** | PostgreSQL (DBLAB) con tablas `personas` y `usuarios` |
 | **Infraestructura** | Terraform para gestión de recursos |
 
@@ -44,6 +44,8 @@ Terraform/
 4. Validación manual: el agente recibe aprobación por WhatsApp.
 5. `aws-deploy`: promoción a AWS con FE, BE y RDS.
 6. GitHub Actions dispara el branch `minikube-deploy` del job multibranch de Jenkins desde `ubuntu-latest` y, si existe el secret `OPENCLAW_WEBHOOK_URL`, lo pasa al pipeline para notificar a OpenClaw.
+7. La UI consulta `GET /api/pipeline/latest` y pinta el último build con hora de inicio, término, estado y stages.
+8. La UI consulta `GET /api/containers/status` y muestra el inventario de frontend, backend, PostgreSQL y Minikube/Ingress con detalle clicable.
 
 ### 📊 Estructura de Base de Datos
 
@@ -105,6 +107,8 @@ python -m http.server 8080
 |--------|----------|-------------|
 | GET | `/` | Bienvenida y versión |
 | GET | `/health` | Health check |
+| GET | `/pipeline/latest` | Último build de Jenkins y estado OpenClaw |
+| GET | `/containers/status` | Inventario de containers y detalle de publicación |
 | POST | `/personas` | Crear persona |
 | POST | `/usuarios` | Crear usuario |
 | POST | `/registrar` | Crear persona y usuario en una sola operación |
@@ -141,8 +145,8 @@ Terraform/
 
 | Component | Description |
 |-----------|-------------|
-| **Frontend** | Cyberpunk login with modern animations, user validation |
-| **Backend** | FastAPI with endpoints for personas and usuarios |
+| **Frontend** | Cyberpunk login with Jenkins panel, OpenClaw and stages |
+| **Backend** | FastAPI with endpoints for personas, usuarios and Jenkins |
 | **Database** | PostgreSQL (DBLAB) with `personas` and `usuarios` tables |
 | **Infrastructure** | Terraform for resource management |
 
@@ -206,6 +210,8 @@ python -m http.server 8080
 |--------|----------|-------------|
 | GET | `/` | Welcome and version |
 | GET | `/health` | Health check |
+| GET | `/pipeline/latest` | Latest Jenkins build and OpenClaw status |
+| GET | `/containers/status` | Container inventory and publication details |
 | POST | `/personas` | Create persona |
 | POST | `/usuarios` | Create usuario |
 | GET | `/personas/{id}` | Get persona by ID |

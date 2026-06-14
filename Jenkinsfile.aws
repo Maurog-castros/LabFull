@@ -85,30 +85,42 @@ pipeline {
 
         stage('Notify ClawCode') {
             steps {
-                sh """
-                    set -eu
-                    if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
-                        payload=\$(cat <<EOF
+                script {
+                    if (params.OPENCLAW_WEBHOOK_URL) {
+                        sh """
+                            set -eu
+                            payload=\$(cat <<EOF
 {"app":"${APP_NAME}","status":"success","message":"AWS deployment finished for FE, BE and BD on RDS."}
 EOF
 )
-                        curl -fsS -X POST \\
-                            -H 'Content-Type: application/json' \\
-                            -d "\$payload" \\
-                            "${params.OPENCLAW_WEBHOOK_URL}"
-                    else
+                            curl -fsS -X POST \\
+                                -H 'Content-Type: application/json' \\
+                                -d "\$payload" \\
+                                "${params.OPENCLAW_WEBHOOK_URL}"
+                        """
+                        env.OPENCLAW_STATUS = 'sent'
+                    } else {
                         echo "OPENCLAW_WEBHOOK_URL not configured; skipping notification"
-                    fi
-                """
+                        env.OPENCLAW_STATUS = 'skipped'
+                    }
+                }
             }
         }
     }
 
     post {
         success {
+            script {
+                def openclaw = env.OPENCLAW_STATUS ?: 'unknown'
+                currentBuild.description = "branch=aws-deploy; openclaw=${openclaw}; result=${currentBuild.currentResult ?: 'SUCCESS'}"
+            }
             echo 'AWS stage completed.'
         }
         failure {
+            script {
+                def openclaw = env.OPENCLAW_STATUS ?: 'unknown'
+                currentBuild.description = "branch=aws-deploy; openclaw=${openclaw}; result=${currentBuild.currentResult ?: 'FAILURE'}"
+            }
             echo 'AWS pipeline failed.'
         }
         always {

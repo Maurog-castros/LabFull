@@ -19,7 +19,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow: auto;
             position: relative;
         }
 
@@ -62,7 +62,7 @@
         /* Login container */
         .login-container {
             position: relative;
-            width: 400px;
+            width: min(460px, calc(100vw - 2rem));
             padding: 50px;
             background: rgba(10, 10, 18, 0.95);
             border: 2px solid #00ffff;
@@ -72,6 +72,12 @@
                 inset 0 0 20px rgba(0, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             animation: slideIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transition: width 0.25s ease, padding 0.25s ease;
+        }
+
+        body.dashboard-active .login-container {
+            width: min(1080px, calc(100vw - 1.5rem));
+            padding: 32px;
         }
 
         @keyframes slideIn {
@@ -312,6 +318,390 @@
         .login-footer a:hover {
             color: #ff00ff;
         }
+
+        .dashboard-shell {
+            display: grid;
+            gap: 24px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-kicker {
+            color: #7afcff;
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-title {
+            font-size: clamp(24px, 3vw, 34px);
+            color: #f4fbff;
+            line-height: 1.1;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-copy {
+            color: #b4c7d3;
+            max-width: 68ch;
+            line-height: 1.5;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-btn {
+            min-width: 130px;
+        }
+
+        .dashboard-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            background: rgba(0, 255, 255, 0.08);
+            color: #dffcff;
+            font-size: 13px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            border: 1px solid rgba(0, 255, 255, 0.18);
+            background: rgba(8, 14, 28, 0.8);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .stat-label {
+            color: #7afcff;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #f5fbff;
+            font-size: 18px;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .stat-note {
+            color: #8ea2af;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .pipeline-panel {
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            background: rgba(8, 14, 28, 0.72);
+            border-radius: 8px;
+            padding: 18px;
+            overflow: hidden;
+        }
+
+        .pipeline-panel h3 {
+            color: #f5fbff;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .pipeline-panel p {
+            color: #a3b4c2;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .stage-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .stage-table caption {
+            caption-side: top;
+            text-align: left;
+            margin-bottom: 12px;
+            color: #7afcff;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .stage-table th,
+        .stage-table td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.12);
+            vertical-align: top;
+            overflow-wrap: anywhere;
+        }
+
+        .stage-table th {
+            color: #7afcff;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .stage-table td {
+            color: #e8f4ff;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .stage-name {
+            width: 18%;
+        }
+
+        .stage-summary {
+            width: 44%;
+            color: #b8cad9;
+        }
+
+        .stage-time {
+            width: 16%;
+            color: #d7e6f2;
+        }
+
+        .stage-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .stage-pill.success {
+            background: rgba(0, 255, 128, 0.14);
+            border: 1px solid rgba(0, 255, 128, 0.35);
+            color: #95ffb7;
+        }
+
+        .stage-pill.failure {
+            background: rgba(255, 80, 80, 0.16);
+            border: 1px solid rgba(255, 80, 80, 0.35);
+            color: #ffb2b2;
+        }
+
+        .stage-pill.skipped,
+        .stage-pill.unknown {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #c4d3dd;
+        }
+
+        .dashboard-empty {
+            color: #92a7b7;
+            font-size: 14px;
+            padding: 16px 0;
+        }
+
+        .container-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .container-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .container-card {
+            display: grid;
+            gap: 8px;
+            width: 100%;
+            min-height: 150px;
+            padding: 16px;
+            border: 1px solid rgba(0, 255, 255, 0.18);
+            background: rgba(8, 14, 28, 0.84);
+            border-radius: 8px;
+            color: inherit;
+            cursor: pointer;
+            text-align: left;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .container-card:hover,
+        .container-card:focus-visible {
+            transform: translateY(-2px);
+            border-color: rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.16), 0 0 20px rgba(0, 255, 255, 0.08);
+            outline: none;
+        }
+
+        .container-card.active {
+            border-color: rgba(0, 255, 255, 0.75);
+            box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.25), 0 0 24px rgba(0, 255, 255, 0.14);
+            background: rgba(10, 24, 40, 0.92);
+        }
+
+        .container-card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .container-name {
+            color: #f5fbff;
+            font-size: 16px;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .container-kind {
+            color: #7afcff;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .container-meta {
+            color: #b8cad9;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .container-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .container-pill {
+            padding: 5px 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.05);
+            color: #d7e6f2;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .container-detail {
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            background: rgba(8, 14, 28, 0.9);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 100%;
+        }
+
+        .container-detail h4 {
+            margin-bottom: 6px;
+            color: #f5fbff;
+            font-size: 20px;
+            line-height: 1.2;
+        }
+
+        .container-detail .detail-kind {
+            color: #7afcff;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .container-detail dl {
+            display: grid;
+            gap: 10px;
+        }
+
+        .container-detail dt {
+            color: #7afcff;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .container-detail dd {
+            margin: 4px 0 0;
+            color: #e6f3ff;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+        }
+
+        .container-detail ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #d6e4f0;
+            line-height: 1.45;
+        }
+
+        .container-detail li + li {
+            margin-top: 6px;
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .container-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .container-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stage-name,
+            .stage-summary,
+            .stage-time {
+                width: auto;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .login-container {
+                padding: 24px;
+            }
+
+            body.dashboard-active .login-container {
+                width: min(1080px, calc(100vw - 1rem));
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-actions {
+                width: 100%;
+            }
+
+            .dashboard-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -371,6 +761,70 @@
             </button>
         </form>
 
+        <section class="dashboard-shell hidden" id="pipelineDashboard" aria-live="polite">
+            <div class="dashboard-header">
+                <div>
+                    <div class="dashboard-kicker">Estado CI/CD</div>
+                    <h2 class="dashboard-title">Último pipeline de Jenkins</h2>
+                    <p class="dashboard-copy" id="dashboardIntro">
+                        Aquí verás el estado del último build, las horas de inicio y fin, la
+                        confirmación de OpenClaw y el resumen de cada stage.
+                    </p>
+                </div>
+
+                <div class="dashboard-actions">
+                    <button type="button" class="secondary-action dashboard-btn" id="refreshPipelineBtn">
+                        Actualizar
+                    </button>
+                    <span class="dashboard-status" id="pipelineBadge">Esperando datos</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <div class="stat-label">Estado</div>
+                    <div class="stat-value" id="buildStatusValue">Sin datos</div>
+                    <div class="stat-note" id="buildBranchValue">Branch: -</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Inicio</div>
+                    <div class="stat-value" id="buildStartValue">-</div>
+                    <div class="stat-note">Formato: dd-mm-YY hh:mm:ss</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Término</div>
+                    <div class="stat-value" id="buildEndValue">-</div>
+                    <div class="stat-note" id="buildDurationValue">Duración: -</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">OpenClaw</div>
+                    <div class="stat-value" id="openclawValue">-</div>
+                    <div class="stat-note" id="openclawDetail">Pendiente de consulta</div>
+                </article>
+            </div>
+
+            <section class="pipeline-panel" aria-labelledby="stagesTitle">
+                <h3 id="stagesTitle">Resumen por stage</h3>
+                <p id="pipelineSummary">Aún no se cargó información del pipeline.</p>
+                <div id="stagesContainer" class="dashboard-empty">Cargando stages...</div>
+            </section>
+
+            <section class="pipeline-panel" aria-labelledby="containersTitle">
+                <h3 id="containersTitle">Estado de containers</h3>
+                <p id="containersSummary">
+                    Selecciona un container para ver qué hace, qué publica y en qué puertos expone el stack.
+                </p>
+                <div class="container-layout">
+                    <div class="container-grid" id="containersGrid">
+                        <div class="dashboard-empty">Cargando inventario de containers...</div>
+                    </div>
+                    <aside class="container-detail" id="containerDetail" aria-live="polite">
+                        <div class="dashboard-empty">Selecciona un container para ver el detalle.</div>
+                    </aside>
+                </div>
+            </section>
+        </section>
+
         <div class="login-footer">
             <p>© 2026 LabFull | Sistema Seguro | <a href="#">Soporte Técnico</a></p>
         </div>
@@ -385,8 +839,101 @@
             const loginModeBtn = document.getElementById('loginModeBtn');
             const registerModeBtn = document.getElementById('registerModeBtn');
             const backToLoginBtn = document.getElementById('backToLoginBtn');
+            const modeSwitch = document.querySelector('.mode-switch');
             const loader = document.getElementById('loader');
             const statusMessage = document.getElementById('statusMessage');
+            const pipelineDashboard = document.getElementById('pipelineDashboard');
+            const refreshPipelineBtn = document.getElementById('refreshPipelineBtn');
+            const pipelineBadge = document.getElementById('pipelineBadge');
+            const buildStatusValue = document.getElementById('buildStatusValue');
+            const buildBranchValue = document.getElementById('buildBranchValue');
+            const buildStartValue = document.getElementById('buildStartValue');
+            const buildEndValue = document.getElementById('buildEndValue');
+            const buildDurationValue = document.getElementById('buildDurationValue');
+            const openclawValue = document.getElementById('openclawValue');
+            const openclawDetail = document.getElementById('openclawDetail');
+            const pipelineSummary = document.getElementById('pipelineSummary');
+            const stagesContainer = document.getElementById('stagesContainer');
+            const dashboardIntro = document.getElementById('dashboardIntro');
+            const containersGrid = document.getElementById('containersGrid');
+            const containerDetail = document.getElementById('containerDetail');
+            const containersSummary = document.getElementById('containersSummary');
+            let selectedContainerId = 'minikube';
+
+            const DEFAULT_CONTAINERS = [
+                {
+                    id: 'frontend',
+                    name: 'Frontend',
+                    kind: 'Deployment',
+                    service: 'frontend-service',
+                    status: 'published',
+                    status_label: 'Publicado',
+                    replicas: '2 replicas',
+                    ports: ['80/tcp'],
+                    published: 'Ingress: labfull.maurocastro.cl -> frontend-service:80',
+                    purpose: 'Sirve la interfaz web y concentra el acceso público al laboratorio.',
+                    healthcheck: 'GET /',
+                    details: [
+                        'Imagen: labfull-frontend:minikube',
+                        'Lee el backend a través de /api en el reverse proxy.',
+                        'Es el punto de entrada público del stack en Minikube.'
+                    ],
+                },
+                {
+                    id: 'backend',
+                    name: 'Backend',
+                    kind: 'Deployment',
+                    service: 'backend-service',
+                    status: 'published',
+                    status_label: 'Publicado',
+                    replicas: '2 replicas',
+                    ports: ['8000/tcp'],
+                    published: 'Interno: backend-service:8000 -> /api del frontend',
+                    purpose: 'Expone la API FastAPI, registra personas y usuarios y consulta Jenkins.',
+                    healthcheck: 'GET /health',
+                    details: [
+                        'Imagen: labfull-backend:minikube',
+                        'Conecta con PostgreSQL usando DB_HOST y DB_NAME desde el ConfigMap.',
+                        'Sirve /pipeline/latest y /containers/status para la UI.'
+                    ],
+                },
+                {
+                    id: 'postgres',
+                    name: 'PostgreSQL',
+                    kind: 'Deployment',
+                    service: 'postgres-service',
+                    status: 'stateful',
+                    status_label: 'Persistente',
+                    replicas: '1 replica',
+                    ports: ['5432/tcp'],
+                    published: 'Interno: postgres-service:5432',
+                    purpose: 'Almacena personas y usuarios del laboratorio.',
+                    healthcheck: 'pg_isready -U postgres',
+                    details: [
+                        'Imagen: postgres:15-alpine',
+                        'En Minikube usa volume local para persistencia de laboratorio.',
+                        'Recibe credenciales desde app-secrets y variables del ConfigMap.'
+                    ],
+                },
+                {
+                    id: 'minikube',
+                    name: 'Minikube / Ingress',
+                    kind: 'Platform',
+                    service: 'labfull-ingress',
+                    status: 'routing',
+                    status_label: 'Ruteando',
+                    replicas: 'Cluster local',
+                    ports: ['80/tcp'],
+                    published: 'labfull.maurocastro.cl -> frontend-service:80; /api -> backend-service:8000',
+                    purpose: 'Orquesta el despliegue local y publica la aplicación por el host público.',
+                    healthcheck: 'kubectl get ingress, svc, pods',
+                    details: [
+                        'Host público: labfull.maurocastro.cl',
+                        'Ruta / entrega el frontend y /api se proxya al backend.',
+                        'La exposición del stack la determina el Ingress del laboratorio.'
+                    ],
+                },
+            ];
 
             // Función para mostrar mensajes
             function showMessage(message, type) {
@@ -401,6 +948,265 @@
 
             const LABFULL_CONFIG = window.__LABFULL_CONFIG__ || {};
             const API_BASE_URL = LABFULL_CONFIG.apiBaseUrl || '/api';
+
+            function setPipelineBadge(text, kind = 'neutral') {
+                pipelineBadge.textContent = text;
+                pipelineBadge.dataset.kind = kind;
+                pipelineBadge.style.borderColor = kind === 'success'
+                    ? 'rgba(0, 255, 128, 0.35)'
+                    : kind === 'failure'
+                        ? 'rgba(255, 80, 80, 0.35)'
+                        : 'rgba(0, 255, 255, 0.3)';
+                pipelineBadge.style.color = kind === 'success'
+                    ? '#95ffb7'
+                    : kind === 'failure'
+                        ? '#ffb2b2'
+                        : '#dffcff';
+                pipelineBadge.style.background = kind === 'success'
+                    ? 'rgba(0, 255, 128, 0.14)'
+                    : kind === 'failure'
+                        ? 'rgba(255, 80, 80, 0.16)'
+                        : 'rgba(0, 255, 255, 0.08)';
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function formatTimestamp(value) {
+                if (!value) {
+                    return '-';
+                }
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) {
+                    return '-';
+                }
+                const pad = (number) => String(number).padStart(2, '0');
+                return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${String(date.getFullYear()).slice(-2)} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+            }
+
+            function formatDuration(value) {
+                if (!value && value !== 0) {
+                    return '-';
+                }
+                return value;
+            }
+
+            function setDashboardVisible(visible) {
+                pipelineDashboard.classList.toggle('hidden', !visible);
+                modeSwitch.classList.toggle('hidden', visible);
+                document.body.classList.toggle('dashboard-active', visible);
+            }
+
+            function renderStages(stages) {
+                if (!Array.isArray(stages) || stages.length === 0) {
+                    stagesContainer.innerHTML = '<div class="dashboard-empty">Jenkins no devolvió stages para este build.</div>';
+                    return;
+                }
+
+                const rows = stages.map((stage) => {
+                    const pillClass = stage.status === 'success'
+                        ? 'success'
+                        : stage.status === 'failure'
+                            ? 'failure'
+                            : stage.status === 'skipped'
+                                ? 'skipped'
+                                : 'unknown';
+                    const statusLabel = {
+                        success: 'SUCCESS',
+                        failure: 'FAILURE',
+                        skipped: 'SKIPPED',
+                        unknown: 'UNKNOWN'
+                    }[pillClass] || String(stage.status || 'UNKNOWN').toUpperCase();
+
+                    return `
+                        <tr>
+                            <td class="stage-name">
+                                <span class="stage-pill ${pillClass}">${statusLabel}</span>
+                            </td>
+                            <td><strong>${stage.name || 'Stage'}</strong></td>
+                            <td class="stage-summary">${stage.summary || 'Sin resumen disponible'}</td>
+                            <td class="stage-time">${stage.started_at || '-'}</td>
+                            <td class="stage-time">${stage.finished_at || '-'}</td>
+                            <td class="stage-time">${stage.duration || '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                stagesContainer.innerHTML = `
+                    <table class="stage-table">
+                        <caption>Detalle de ejecución</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Stage</th>
+                                <th scope="col">Resumen</th>
+                                <th scope="col">Inicio</th>
+                                <th scope="col">Fin</th>
+                                <th scope="col">Duración</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                `;
+            }
+
+            function renderPipeline(payload, username) {
+                const build = payload?.build || {};
+                const openclaw = payload?.openclaw || {};
+                const branch = build.branch || 'main';
+                const result = String(build.result || payload?.status || 'UNKNOWN').toUpperCase();
+                const resultKind = result === 'SUCCESS'
+                    ? 'success'
+                    : ['FAILURE', 'FAILED', 'UNSTABLE'].includes(result)
+                        ? 'failure'
+                        : 'neutral';
+
+                setPipelineBadge(result, resultKind);
+                buildStatusValue.textContent = result;
+                buildBranchValue.textContent = `Branch: ${branch}`;
+                buildStartValue.textContent = formatTimestamp(build.started_at);
+                buildEndValue.textContent = formatTimestamp(build.finished_at);
+                buildDurationValue.textContent = `Duración: ${formatDuration(build.duration)}`;
+                openclawValue.textContent = openclaw.label || 'Desconocido';
+                openclawDetail.textContent = openclaw.detail || 'Sin detalle disponible';
+                pipelineSummary.textContent = payload?.summary || 'Resumen no disponible.';
+                dashboardIntro.textContent = username
+                    ? `Usuario ${username}: el último build de Jenkins ya quedó cargado para revisión.`
+                    : 'Aquí verás el estado del último build, las horas de inicio y fin, la confirmación de OpenClaw y el resumen de cada stage.';
+                renderStages(payload?.stages || []);
+            }
+
+            function renderContainerDetail(container) {
+                if (!container) {
+                    containerDetail.innerHTML = '<div class="dashboard-empty">Selecciona un container para ver el detalle.</div>';
+                    return;
+                }
+
+                const details = Array.isArray(container.details) ? container.details : [];
+                const ports = Array.isArray(container.ports) ? container.ports : [];
+
+                containerDetail.innerHTML = `
+                    <div class="detail-kind">${escapeHtml(container.kind || 'Container')}</div>
+                    <h4>${escapeHtml(container.name || 'Container')}</h4>
+                    <p class="container-meta">${escapeHtml(container.purpose || 'Sin descripción disponible')}</p>
+                    <dl>
+                        <div>
+                            <dt>Servicio</dt>
+                            <dd>${escapeHtml(container.service || '-')}</dd>
+                        </div>
+                        <div>
+                            <dt>Estado</dt>
+                            <dd>${escapeHtml(container.status_label || container.status || '-')}</dd>
+                        </div>
+                        <div>
+                            <dt>Replicas</dt>
+                            <dd>${escapeHtml(container.replicas || '-')}</dd>
+                        </div>
+                        <div>
+                            <dt>Puertos</dt>
+                            <dd>${ports.length ? ports.map((port) => `<span class="container-pill">${escapeHtml(port)}</span>`).join(' ') : '-'}</dd>
+                        </div>
+                        <div>
+                            <dt>Publicación</dt>
+                            <dd>${escapeHtml(container.published || '-')}</dd>
+                        </div>
+                        <div>
+                            <dt>Verificación</dt>
+                            <dd>${escapeHtml(container.healthcheck || '-')}</dd>
+                        </div>
+                    </dl>
+                    ${details.length ? `
+                        <div style="margin-top: 14px;">
+                            <dt style="margin-bottom: 8px;">Detalle operativo</dt>
+                            <ul>
+                                ${details.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                `;
+            }
+
+            function renderContainers(payload) {
+                const containers = Array.isArray(payload?.containers) && payload.containers.length ? payload.containers : DEFAULT_CONTAINERS;
+                const fallbackSelected = payload?.selected_id || selectedContainerId || containers[0]?.id || 'minikube';
+                if (!containers.some((container) => container.id === selectedContainerId)) {
+                    selectedContainerId = fallbackSelected;
+                }
+
+                containersSummary.textContent = payload?.summary || 'Selecciona un container para ver qué hace, qué publica y en qué puertos expone el stack.';
+                containersGrid.innerHTML = containers.map((container) => {
+                    const active = container.id === selectedContainerId;
+                    const badges = [
+                        container.status_label || container.status,
+                        container.replicas,
+                        ...(Array.isArray(container.ports) ? container.ports : [])
+                    ].filter(Boolean);
+                    const cardStateClass = ['published', 'routing'].includes(container.status)
+                        ? 'success'
+                        : container.status === 'stateful'
+                            ? 'skipped'
+                            : 'unknown';
+
+                    return `
+                        <button
+                            type="button"
+                            class="container-card${active ? ' active' : ''}"
+                            data-container-id="${escapeHtml(container.id)}"
+                            aria-pressed="${active ? 'true' : 'false'}"
+                        >
+                            <div class="container-card-top">
+                                <div>
+                                    <div class="container-name">${escapeHtml(container.name || 'Container')}</div>
+                                    <div class="container-kind">${escapeHtml(container.kind || 'Container')}</div>
+                                </div>
+                                <span class="stage-pill ${cardStateClass}">
+                                    ${escapeHtml(container.status_label || container.status || 'UNKNOWN')}
+                                </span>
+                            </div>
+                            <div class="container-meta">${escapeHtml(container.purpose || 'Sin descripción disponible')}</div>
+                            <div class="container-badges">
+                                ${badges.map((badge) => `<span class="container-pill">${escapeHtml(badge)}</span>`).join('')}
+                            </div>
+                        </button>
+                    `;
+                }).join('');
+
+                containersGrid.querySelectorAll('.container-card').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        selectedContainerId = button.dataset.containerId || selectedContainerId;
+                        renderContainers({ ...payload, containers });
+                    });
+                });
+
+                const selected = containers.find((container) => container.id === selectedContainerId) || containers[0];
+                renderContainerDetail(selected);
+            }
+
+            async function fetchPipelineStatus() {
+                const response = await fetch(`${API_BASE_URL}/pipeline/latest`);
+                const data = await response.json().catch(() => null);
+                if (!response.ok) {
+                    const detail = data && data.detail ? data.detail : 'No se pudo leer Jenkins';
+                    throw new Error(detail);
+                }
+                return data;
+            }
+
+            async function fetchContainersStatus() {
+                const response = await fetch(`${API_BASE_URL}/containers/status`);
+                const data = await response.json().catch(() => null);
+                if (!response.ok) {
+                    const detail = data && data.detail ? data.detail : 'No se pudo leer el inventario de containers';
+                    throw new Error(detail);
+                }
+                return data;
+            }
 
             function setMode(mode) {
                 const isRegister = mode === 'register';
@@ -455,17 +1261,43 @@
 
                 try {
                     const backendReady = await pingBackend();
-
                     if (backendReady === null) {
-                        showMessage('⚠️ API no disponible. Modo demo activo.', 'status-success');
-                        setTimeout(() => {
-                            showMessage(`✅ Acceso concedido: ${username}`, 'status-success');
-                            loginBtn.disabled = false;
-                            loader.style.display = 'none';
-                        }, 1500);
-                    } else {
-                        showMessage(`✅ Backend disponible. Usuario ${username} listo para registrar.`, 'status-success');
+                        showMessage('⚠️ Backend no disponible. Cargando vista de demostración.', 'status-success');
                     }
+
+                    const [pipeline, containers] = await Promise.all([
+                        fetchPipelineStatus().catch((error) => ({
+                            source: 'fallback',
+                            status: 'degraded',
+                            summary: `No se pudo consultar Jenkins: ${error.message}`,
+                            build: {
+                                result: 'UNKNOWN',
+                                started_at: null,
+                                finished_at: null,
+                                duration: '-',
+                                branch: 'minikube-deploy'
+                            },
+                            openclaw: {
+                                label: 'Desconocido',
+                                detail: error.message
+                            },
+                            stages: []
+                        })),
+                        fetchContainersStatus().catch((error) => ({
+                            source: 'fallback',
+                            status: 'degraded',
+                            summary: `No se pudo leer el inventario: ${error.message}`,
+                            selected_id: 'minikube',
+                            containers: DEFAULT_CONTAINERS
+                        })),
+                    ]);
+
+                    setDashboardVisible(true);
+                    loginForm.classList.add('hidden');
+                    registerForm.classList.add('hidden');
+                    renderPipeline(pipeline, username);
+                    renderContainers(containers);
+                    showMessage(`✅ Panel cargado para ${username}`, 'status-success');
                 } catch (error) {
                     showMessage(`❌ Error: ${error.message}`, 'status-error');
                 } finally {
@@ -504,6 +1336,23 @@
                 }
             });
 
+            refreshPipelineBtn.addEventListener('click', async function() {
+                refreshPipelineBtn.disabled = true;
+                try {
+                    const [pipeline, containers] = await Promise.all([
+                        fetchPipelineStatus(),
+                        fetchContainersStatus(),
+                    ]);
+                    renderPipeline(pipeline, document.getElementById('username').value.trim());
+                    renderContainers(containers);
+                    showMessage('✅ Pipeline actualizado', 'status-success');
+                } catch (error) {
+                    showMessage(`❌ No se pudo actualizar Jenkins: ${error.message}`, 'status-error');
+                } finally {
+                    refreshPipelineBtn.disabled = false;
+                }
+            });
+
             // Efecto de teclado retro
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
@@ -513,6 +1362,7 @@
             });
 
             setMode('login');
+            setDashboardVisible(false);
         });
     </script>
 </body>

@@ -124,21 +124,25 @@ pipeline {
                 branch 'minikube-deploy'
             }
             steps {
-                sh """
-                    set -eu
-                    if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
-                        payload=\$(cat <<EOF
+                script {
+                    if (params.OPENCLAW_WEBHOOK_URL) {
+                        sh """
+                            set -eu
+                            payload=\$(cat <<EOF
 {"app":"${APP_NAME}","status":"success","message":"LabFull is now live at ${params.PUBLIC_URL}. When validation passes, reply with ${params.NEXT_PIPELINE_SIGNAL} and promote branch ${params.NEXT_BRANCH_NAME} for AWS.","next_branch":"${params.NEXT_BRANCH_NAME}","approval_signal":"${params.NEXT_PIPELINE_SIGNAL}","public_url":"${params.PUBLIC_URL}"}
 EOF
 )
-                        curl -fsS -X POST \\
-                            -H 'Content-Type: application/json' \\
-                            -d "\$payload" \\
-                            "${params.OPENCLAW_WEBHOOK_URL}"
-                    else
+                            curl -fsS -X POST \\
+                                -H 'Content-Type: application/json' \\
+                                -d "\$payload" \\
+                                "${params.OPENCLAW_WEBHOOK_URL}"
+                        """
+                        env.OPENCLAW_STATUS = 'sent'
+                    } else {
                         echo "OPENCLAW_WEBHOOK_URL not configured; skipping agent notification"
-                    fi
-                """
+                        env.OPENCLAW_STATUS = 'skipped'
+                    }
+                }
             }
         }
 
@@ -205,21 +209,25 @@ EOF
                 branch 'aws-deploy'
             }
             steps {
-                sh """
-                    set -eu
-                    if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
-                        payload=\$(cat <<EOF
+                script {
+                    if (params.OPENCLAW_WEBHOOK_URL) {
+                        sh """
+                            set -eu
+                            payload=\$(cat <<EOF
 {"app":"${APP_NAME}","status":"success","message":"AWS deployment finished for branch aws-deploy: FE, BE and BD on RDS."}
 EOF
 )
-                        curl -fsS -X POST \\
-                            -H 'Content-Type: application/json' \\
-                            -d "\$payload" \\
-                            "${params.OPENCLAW_WEBHOOK_URL}"
-                    else
+                            curl -fsS -X POST \\
+                                -H 'Content-Type: application/json' \\
+                                -d "\$payload" \\
+                                "${params.OPENCLAW_WEBHOOK_URL}"
+                        """
+                        env.OPENCLAW_STATUS = 'sent'
+                    } else {
                         echo "OPENCLAW_WEBHOOK_URL not configured; skipping notification"
-                    fi
-                """
+                        env.OPENCLAW_STATUS = 'skipped'
+                    }
+                }
             }
         }
 
@@ -238,9 +246,21 @@ EOF
 
     post {
         success {
+            script {
+                def branch = env.PIPELINE_BRANCH ?: (env.BRANCH_NAME ?: 'main')
+                def openclaw = env.OPENCLAW_STATUS ?: 'unknown'
+                def result = currentBuild.currentResult ?: 'SUCCESS'
+                currentBuild.description = "branch=${branch}; openclaw=${openclaw}; result=${result}"
+            }
             echo "Multibranch flow completed for ${env.BRANCH_NAME ?: 'main'}."
         }
         failure {
+            script {
+                def branch = env.PIPELINE_BRANCH ?: (env.BRANCH_NAME ?: 'main')
+                def openclaw = env.OPENCLAW_STATUS ?: 'unknown'
+                def result = currentBuild.currentResult ?: 'FAILURE'
+                currentBuild.description = "branch=${branch}; openclaw=${openclaw}; result=${result}"
+            }
             echo 'Pipeline failed. Review the stage that stopped the flow.'
         }
         always {

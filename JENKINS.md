@@ -14,6 +14,7 @@
 2. Point it at the GitHub repo.
 3. Keep `Jenkinsfile` at the repo root.
 4. Make sure Jenkins discovers these branches.
+5. Expose the last completed build through `/lastCompletedBuild/api/json` and `/lastCompletedBuild/wfapi/describe` so the UI can render the dashboard.
 
 ## GitHub Actions bridge
 
@@ -32,6 +33,7 @@ The workflow `.github/workflows/trigger-jenkins-minikube.yml` expects these GitH
 1. `minikube-deploy` builds and deploys to the Ubuntu host.
 2. The pipeline validates the public URL and notifies OpenClaw.
 3. After manual approval, `aws-deploy` runs the AWS promotion stages.
+4. `GET /api/pipeline/latest` reads Jenkins and shows the latest status inside the web app.
 
 ## Required runtime tools
 

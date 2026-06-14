@@ -5,7 +5,11 @@
 ### Características
 - Diseño moderno estilo cyberpunk con efectos de neón
 - Animaciones CSS3 (grid, glow, slide-in)
-- Validación de usuario simulada
+- Panel post-login con estado del último pipeline de Jenkins
+- Fechas en formato `dd-mm-YY hh:mm:ss`
+- Resumen por stage y estado del mensaje de OpenClaw
+- Inventario clicable de containers con detalle de publicación
+- Formulario de registro conectado al backend
 - Efectos de scanlines retro
 
 ### Cómo ejecutar
@@ -13,7 +17,7 @@
 # Usando Python HTTP server
 python -m http.server 8080
 
-# O abrir directamente el archivo HTML en el navegador
+# O servirlo detrás del reverse proxy que expone /api hacia FastAPI
 ```
 
 ### Acceder a la aplicación
