@@ -17,7 +17,7 @@ require_var PUBLIC_URL
 PUBLIC_DASHBOARD_URL="${PUBLIC_DASHBOARD_URL:-https://ministack.maurocastro.cl}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REMOTE_DIR="${K8S_DEPLOY_DIR:-/opt/labfull}"
+REMOTE_DIR="${K8S_DEPLOY_DIR:-/home/mauro/labfull}"
 SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=yes)
 SSH_TARGET="${MINIKUBE_USER}@${MINIKUBE_HOST}"
 

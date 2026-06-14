@@ -4,55 +4,65 @@ set -euo pipefail
 
 DASHBOARD_HOST="${DASHBOARD_HOST:-ministack.maurocastro.cl}"
 MINIKUBE_PROFILE="${MINIKUBE_PROFILE:-labfull}"
-NGINX_CONF_PATH="${NGINX_CONF_PATH:-/etc/nginx/conf.d/ministack-dashboard.conf}"
-PROXY_SCHEME="${PROXY_SCHEME:-https}"
+DMZ_PROXY_DIR="${DMZ_PROXY_DIR:-/home/mauro/Dev/infra/maurocastro-dmz/proxy}"
+DMZ_PROXY_CONTAINER="${DMZ_PROXY_CONTAINER:-maurocastro-dmz-proxy}"
+DASHBOARD_FORWARD_PORT="${DASHBOARD_FORWARD_PORT:-8086}"
 
 command -v minikube >/dev/null
-command -v nginx >/dev/null
-command -v sudo >/dev/null
+command -v kubectl >/dev/null
+command -v docker >/dev/null
 
-MINIKUBE_IP="$(minikube -p "${MINIKUBE_PROFILE}" ip)"
+kubectl config use-context "${MINIKUBE_PROFILE}" >/dev/null
+kubectl get service -n kubernetes-dashboard kubernetes-dashboard >/dev/null
 
-if [ "${PROXY_SCHEME}" = "https" ]; then
-  TLS_CERT_PATH="${TLS_CERT_PATH:-/etc/letsencrypt/live/${DASHBOARD_HOST}/fullchain.pem}"
-  TLS_KEY_PATH="${TLS_KEY_PATH:-/etc/letsencrypt/live/${DASHBOARD_HOST}/privkey.pem}"
-  if [ ! -r "${TLS_CERT_PATH}" ] || [ ! -r "${TLS_KEY_PATH}" ]; then
-    echo "TLS certificate not found for ${DASHBOARD_HOST}" >&2
-    echo "Set TLS_CERT_PATH/TLS_KEY_PATH or issue the certificate before enabling HTTPS proxy." >&2
+if ! ss -ltn | grep -q ":${DASHBOARD_FORWARD_PORT} "; then
+  nohup kubectl --context "${MINIKUBE_PROFILE}" \
+    --address 0.0.0.0 \
+    -n kubernetes-dashboard \
+    port-forward service/kubernetes-dashboard "${DASHBOARD_FORWARD_PORT}:80" \
+    > /tmp/ministack-dashboard-port-forward.log 2>&1 &
+  sleep 2
+  if ! ss -ltn | grep -q ":${DASHBOARD_FORWARD_PORT} "; then
+    cat /tmp/ministack-dashboard-port-forward.log >&2 || true
+    echo "Dashboard port-forward failed on ${DASHBOARD_FORWARD_PORT}" >&2
     exit 1
   fi
-  LISTEN_BLOCK='listen 443 ssl http2;'
-  TLS_BLOCK='
-    ssl_certificate '"${TLS_CERT_PATH}"';
-    ssl_certificate_key '"${TLS_KEY_PATH}"';'
-else
-  LISTEN_BLOCK='listen 80;'
-  TLS_BLOCK=''
 fi
 
-TMP_CONF="$(mktemp)"
-cat > "${TMP_CONF}" <<NGINX
+mkdir -p "${DMZ_PROXY_DIR}/conf.d"
+cat > "${DMZ_PROXY_DIR}/conf.d/ministack.conf" <<NGINX
 server {
-    ${LISTEN_BLOCK}
+    listen 8080;
     server_name ${DASHBOARD_HOST};
-${TLS_BLOCK}
 
     location / {
-        proxy_pass http://${MINIKUBE_IP};
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${DASHBOARD_HOST};
+
+    ssl_certificate     /etc/letsencrypt/live/maurocastro-dmz/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/maurocastro-dmz/privkey.pem;
+    include /etc/nginx/snippets/ssl-params.conf;
+
+    location / {
+        proxy_pass http://172.20.0.1:${DASHBOARD_FORWARD_PORT};
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Connection '';
+        proxy_buffering off;
         proxy_read_timeout 300s;
     }
 }
 NGINX
 
-sudo install -m 0644 "${TMP_CONF}" "${NGINX_CONF_PATH}"
-rm -f "${TMP_CONF}"
+docker exec "${DMZ_PROXY_CONTAINER}" nginx -t
+docker restart "${DMZ_PROXY_CONTAINER}" >/dev/null
 
-sudo nginx -t
-sudo systemctl reload nginx
-
-echo "Public proxy route enabled: ${DASHBOARD_HOST} -> http://${MINIKUBE_IP}"
+echo "Public proxy route enabled: ${DASHBOARD_HOST} -> http://172.20.0.1:${DASHBOARD_FORWARD_PORT}"
