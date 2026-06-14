@@ -4,7 +4,7 @@ metadata:
   name: labfull-ingress
 spec:
   rules:
-    - host: LabFull.maurocastro.cl
+    - host: labfull.maurocastro.cl
       http:
         paths:
           - path: /

@@ -52,7 +52,7 @@ This directory contains Kubernetes manifests for deploying the application.
 5. **Access the application:**
    ```bash
    kubectl get ingress labfull-ingress
-   curl -H 'Host: LabFull.maurocastro.cl' http://<minikube-ip>/
+   curl -H 'Host: labfull.maurocastro.cl' http://<minikube-ip>/
    ```
 
 ## Directory Structure

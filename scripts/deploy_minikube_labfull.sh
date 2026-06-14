@@ -12,7 +12,6 @@ require_var() {
 
 require_var MINIKUBE_HOST
 require_var MINIKUBE_USER
-require_var MINIKUBE_PROFILE
 require_var PUBLIC_URL
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -30,6 +29,7 @@ tar -C "$ROOT_DIR" -cf - \
   app-web \
   backend-fastapi \
   bd \
+  docker-compose.yml \
   k8s \
   scripts \
   README.md \
@@ -44,12 +44,21 @@ set -euo pipefail
 
 export PATH="$HOME/.local/bin:$PATH"
 
+MINIKUBE_PROFILE="${MINIKUBE_PROFILE:-labfull}"
+
 echo "Working directory: ${REMOTE_DIR}"
 cd "${REMOTE_DIR}"
 
 command -v minikube >/dev/null
 command -v kubectl >/dev/null
 command -v docker >/dev/null
+
+if ! minikube profile list | grep -qE "^[[:space:]]*${MINIKUBE_PROFILE}[[:space:]]"; then
+  if minikube profile list | grep -qE "^[[:space:]]*labfull[[:space:]]"; then
+    echo "Requested profile '${MINIKUBE_PROFILE}' not found. Falling back to 'labfull'."
+    MINIKUBE_PROFILE="labfull"
+  fi
+fi
 
 if ! minikube status -p "${MINIKUBE_PROFILE}" >/dev/null 2>&1; then
   minikube start -p "${MINIKUBE_PROFILE}" --driver=docker
@@ -72,6 +81,9 @@ kubectl apply -f ./k8s/backend-deployment.yaml
 kubectl apply -f ./k8s/frontend-service.yaml
 kubectl apply -f ./k8s/frontend-deployment.yaml
 kubectl apply -f ./k8s/ingress.yaml
+
+kubectl rollout restart deployment/backend-deployment
+kubectl rollout restart deployment/frontend-deployment
 
 kubectl rollout status deployment/postgres-deployment --timeout=300s
 kubectl rollout status deployment/backend-deployment --timeout=300s

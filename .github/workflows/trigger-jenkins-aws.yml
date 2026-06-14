@@ -1,16 +1,16 @@
-name: Trigger Jenkins Minikube Deploy
+name: Trigger Jenkins AWS Deploy
 
 on:
   push:
     branches:
-      - minikube-deploy
+      - aws-deploy
 
 jobs:
   trigger:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Jenkins branch build
+      - name: Trigger Jenkins AWS branch build
         env:
           JENKINS_URL: ${{ secrets.JENKINS_URL }}
           JENKINS_JOB_NAME: ${{ secrets.JENKINS_JOB_NAME }}
@@ -33,7 +33,7 @@ jobs:
 
           curl -fsS -u "${JENKINS_USER}:${JENKINS_API_TOKEN}" \
             -X POST \
-            --data-urlencode "cause=GitHub push to minikube-deploy" \
+            --data-urlencode "cause=GitHub push to aws-deploy" \
             --data-urlencode "gitBranch=${GITHUB_REF_NAME}" \
             --data-urlencode "gitCommit=${GITHUB_SHA}" \
             "${extra_args[@]}" \

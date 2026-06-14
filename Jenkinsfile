@@ -12,7 +12,7 @@ pipeline {
         string(name: 'MINIKUBE_HOST', defaultValue: '192.168.1.12', description: 'Ubuntu LAN host where Minikube runs')
         string(name: 'MINIKUBE_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
         string(name: 'MINIKUBE_PROFILE', defaultValue: 'labfull', description: 'Minikube profile used on the Ubuntu host')
-        string(name: 'PUBLIC_URL', defaultValue: 'https://LabFull.maurocastro.cl', description: 'Public URL exposed by the reverse proxy')
+        string(name: 'PUBLIC_URL', defaultValue: 'https://labfull.maurocastro.cl', description: 'Public URL exposed by the reverse proxy')
         string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: '', description: 'OpenClaw webhook URL used to notify the agent')
         string(name: 'NEXT_BRANCH_NAME', defaultValue: 'aws-deploy', description: 'Branch to promote after manual validation')
         string(name: 'NEXT_PIPELINE_SIGNAL', defaultValue: '1', description: 'Approval token the agent must return to start AWS')
@@ -124,21 +124,38 @@ pipeline {
                 branch 'minikube-deploy'
             }
             steps {
-                sh """
-                    set -eu
-                    if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
-                        payload=\$(cat <<EOF
+                script {
+                    if (params.OPENCLAW_WEBHOOK_URL) {
+                        sh """
+                            set -eu
+                            response_file=\"${env.WORKSPACE}/.openclaw-response-minikube.txt\"
+                            rm -f \"\$response_file\"
+                            payload=\$(cat <<EOF
 {"app":"${APP_NAME}","status":"success","message":"LabFull is now live at ${params.PUBLIC_URL}. When validation passes, reply with ${params.NEXT_PIPELINE_SIGNAL} and promote branch ${params.NEXT_BRANCH_NAME} for AWS.","next_branch":"${params.NEXT_BRANCH_NAME}","approval_signal":"${params.NEXT_PIPELINE_SIGNAL}","public_url":"${params.PUBLIC_URL}"}
 EOF
 )
-                        curl -fsS -X POST \\
-                            -H 'Content-Type: application/json' \\
-                            -d "\$payload" \\
-                            "${params.OPENCLAW_WEBHOOK_URL}"
-                    else
+                            http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
+                                -H 'Content-Type: application/json' \\
+                                -d "\$payload" \\
+                                "${params.OPENCLAW_WEBHOOK_URL}")
+                            echo "OPENCLAW_HTTP_CODE=\$http_code"
+                            if [ -f \"\$response_file\" ]; then
+                                echo "--- OPENCLAW_RESPONSE ---"
+                                cat \"\$response_file\"
+                                echo
+                                echo "--- END OPENCLAW_RESPONSE ---"
+                            fi
+                            if [ \"\$http_code\" -lt 200 ] || [ \"\$http_code\" -ge 300 ]; then
+                                echo "OpenClaw webhook returned non-2xx status: \$http_code" >&2
+                                exit 1
+                            fi
+                        """
+                        env.OPENCLAW_STATUS = 'sent'
+                    } else {
                         echo "OPENCLAW_WEBHOOK_URL not configured; skipping agent notification"
-                    fi
-                """
+                        env.OPENCLAW_STATUS = 'skipped'
+                    }
+                }
             }
         }
 
@@ -205,21 +222,38 @@ EOF
                 branch 'aws-deploy'
             }
             steps {
-                sh """
-                    set -eu
-                    if [ -n "${params.OPENCLAW_WEBHOOK_URL}" ]; then
-                        payload=\$(cat <<EOF
+                script {
+                    if (params.OPENCLAW_WEBHOOK_URL) {
+                        sh """
+                            set -eu
+                            response_file=\"${env.WORKSPACE}/.openclaw-response-aws.txt\"
+                            rm -f \"\$response_file\"
+                            payload=\$(cat <<EOF
 {"app":"${APP_NAME}","status":"success","message":"AWS deployment finished for branch aws-deploy: FE, BE and BD on RDS."}
 EOF
 )
-                        curl -fsS -X POST \\
-                            -H 'Content-Type: application/json' \\
-                            -d "\$payload" \\
-                            "${params.OPENCLAW_WEBHOOK_URL}"
-                    else
+                            http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
+                                -H 'Content-Type: application/json' \\
+                                -d "\$payload" \\
+                                "${params.OPENCLAW_WEBHOOK_URL}")
+                            echo "OPENCLAW_HTTP_CODE=\$http_code"
+                            if [ -f \"\$response_file\" ]; then
+                                echo "--- OPENCLAW_RESPONSE ---"
+                                cat \"\$response_file\"
+                                echo
+                                echo "--- END OPENCLAW_RESPONSE ---"
+                            fi
+                            if [ \"\$http_code\" -lt 200 ] || [ \"\$http_code\" -ge 300 ]; then
+                                echo "OpenClaw webhook returned non-2xx status: \$http_code" >&2
+                                exit 1
+                            fi
+                        """
+                        env.OPENCLAW_STATUS = 'sent'
+                    } else {
                         echo "OPENCLAW_WEBHOOK_URL not configured; skipping notification"
-                    fi
-                """
+                        env.OPENCLAW_STATUS = 'skipped'
+                    }
+                }
             }
         }
 
@@ -238,9 +272,21 @@ EOF
 
     post {
         success {
+            script {
+                def branch = env.PIPELINE_BRANCH ?: (env.BRANCH_NAME ?: 'main')
+                def openclaw = env.OPENCLAW_STATUS ?: 'unknown'
+                def result = currentBuild.currentResult ?: 'SUCCESS'
+                currentBuild.description = "branch=${branch}; openclaw=${openclaw}; result=${result}"
+            }
             echo "Multibranch flow completed for ${env.BRANCH_NAME ?: 'main'}."
         }
         failure {
+            script {
+                def branch = env.PIPELINE_BRANCH ?: (env.BRANCH_NAME ?: 'main')
+                def openclaw = env.OPENCLAW_STATUS ?: 'unknown'
+                def result = currentBuild.currentResult ?: 'FAILURE'
+                currentBuild.description = "branch=${branch}; openclaw=${openclaw}; result=${result}"
+            }
             echo 'Pipeline failed. Review the stage that stopped the flow.'
         }
         always {

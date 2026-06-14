@@ -11,5 +11,11 @@ data:
   # Backend configuration
   BACKEND_PORT: "8000"
   
+  # Jenkins configuration
+  JENKINS_BASE_URL: "https://jenkins.maurocastro.cl"
+  JENKINS_JOB_PATH: "job/LabFull-CI-CD"
+  JENKINS_JOB_NAME: "LabFull-CI-CD"
+  JENKINS_TIMEOUT_SECONDS: "8"
+  
   # Frontend configuration (nginx upstream)
   BACKEND_URL: "http://backend-service:8000"
