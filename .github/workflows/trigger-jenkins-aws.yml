@@ -13,13 +13,13 @@ jobs:
       - name: Trigger Jenkins AWS branch build
         env:
           JENKINS_URL: ${{ secrets.JENKINS_URL }}
-          JENKINS_JOB_NAME: ${{ secrets.JENKINS_JOB_NAME }}
+          JENKINS_JOB_PATH: ${{ secrets.JENKINS_JOB_PATH }}
           JENKINS_USER: ${{ secrets.JENKINS_USER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
           OPENCLAW_WEBHOOK_URL: ${{ secrets.OPENCLAW_WEBHOOK_URL }}
         run: |
           set -euo pipefail
-          : "${JENKINS_JOB_NAME:=LabFull-CI-CD}"
+          : "${JENKINS_JOB_PATH:=job/LabFull-CI-CD}"
 
           if [ -z "${JENKINS_URL:-}" ] || [ -z "${JENKINS_USER:-}" ] || [ -z "${JENKINS_API_TOKEN:-}" ]; then
             echo "Missing Jenkins secrets. Set JENKINS_URL, JENKINS_USER and JENKINS_API_TOKEN."
@@ -31,10 +31,12 @@ jobs:
             extra_args+=(--data-urlencode "OPENCLAW_WEBHOOK_URL=${OPENCLAW_WEBHOOK_URL}")
           fi
 
+          branch_job_path="${JENKINS_JOB_PATH%/}/job/${GITHUB_REF_NAME}"
+
           curl -fsS -u "${JENKINS_USER}:${JENKINS_API_TOKEN}" \
             -X POST \
             --data-urlencode "cause=GitHub push to aws-deploy" \
             --data-urlencode "gitBranch=${GITHUB_REF_NAME}" \
             --data-urlencode "gitCommit=${GITHUB_SHA}" \
             "${extra_args[@]}" \
-            "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"
+            "${JENKINS_URL%/}/${branch_job_path}/buildWithParameters"

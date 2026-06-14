@@ -23,7 +23,7 @@ The workflows `.github/workflows/trigger-jenkins-minikube.yml` and `.github/work
 | Secret | Meaning |
 |--------|---------|
 | `JENKINS_URL` | Base Jenkins URL |
-| `JENKINS_JOB_NAME` | Name of the multibranch Jenkins job that contains the Jenkinsfile branches |
+| `JENKINS_JOB_PATH` | Multibranch Jenkins job path, for example `job/LabFull-CI-CD` |
 | `JENKINS_USER` | Jenkins user with API token access |
 | `JENKINS_API_TOKEN` | Jenkins API token |
 | `OPENCLAW_WEBHOOK_URL` | Optional OpenClaw webhook passed to Jenkins for WhatsApp notification |
