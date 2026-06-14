@@ -37,8 +37,6 @@ jobs:
             --data-urlencode "cause=GitHub push to minikube-deploy" \
             --data-urlencode "gitBranch=${GITHUB_REF_NAME}" \
             --data-urlencode "gitCommit=${GITHUB_SHA}" \
-            --data-urlencode "PUBLIC_DASHBOARD_URL=https://ministack.maurocastro.cl" \
-            --data-urlencode "APPLY_PUBLIC_PROXY=true" \
             --data-urlencode "OPENCLAW_WEBHOOK_URL=${OPENCLAW_WEBHOOK_URL}" \
             --data-urlencode "OPENCLAW_WEBHOOK_TOKEN=${OPENCLAW_WEBHOOK_TOKEN}" \
             "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"
