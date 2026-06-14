@@ -128,14 +128,27 @@ pipeline {
                     if (params.OPENCLAW_WEBHOOK_URL) {
                         sh """
                             set -eu
+                            response_file=\"${env.WORKSPACE}/.openclaw-response-minikube.txt\"
+                            rm -f \"\$response_file\"
                             payload=\$(cat <<EOF
 {"app":"${APP_NAME}","status":"success","message":"LabFull is now live at ${params.PUBLIC_URL}. When validation passes, reply with ${params.NEXT_PIPELINE_SIGNAL} and promote branch ${params.NEXT_BRANCH_NAME} for AWS.","next_branch":"${params.NEXT_BRANCH_NAME}","approval_signal":"${params.NEXT_PIPELINE_SIGNAL}","public_url":"${params.PUBLIC_URL}"}
 EOF
 )
-                            curl -fsS -X POST \\
+                            http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
                                 -H 'Content-Type: application/json' \\
                                 -d "\$payload" \\
-                                "${params.OPENCLAW_WEBHOOK_URL}"
+                                "${params.OPENCLAW_WEBHOOK_URL}")
+                            echo "OPENCLAW_HTTP_CODE=\$http_code"
+                            if [ -f \"\$response_file\" ]; then
+                                echo "--- OPENCLAW_RESPONSE ---"
+                                cat \"\$response_file\"
+                                echo
+                                echo "--- END OPENCLAW_RESPONSE ---"
+                            fi
+                            if [ \"\$http_code\" -lt 200 ] || [ \"\$http_code\" -ge 300 ]; then
+                                echo "OpenClaw webhook returned non-2xx status: \$http_code" >&2
+                                exit 1
+                            fi
                         """
                         env.OPENCLAW_STATUS = 'sent'
                     } else {
@@ -213,14 +226,27 @@ EOF
                     if (params.OPENCLAW_WEBHOOK_URL) {
                         sh """
                             set -eu
+                            response_file=\"${env.WORKSPACE}/.openclaw-response-aws.txt\"
+                            rm -f \"\$response_file\"
                             payload=\$(cat <<EOF
 {"app":"${APP_NAME}","status":"success","message":"AWS deployment finished for branch aws-deploy: FE, BE and BD on RDS."}
 EOF
 )
-                            curl -fsS -X POST \\
+                            http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
                                 -H 'Content-Type: application/json' \\
                                 -d "\$payload" \\
-                                "${params.OPENCLAW_WEBHOOK_URL}"
+                                "${params.OPENCLAW_WEBHOOK_URL}")
+                            echo "OPENCLAW_HTTP_CODE=\$http_code"
+                            if [ -f \"\$response_file\" ]; then
+                                echo "--- OPENCLAW_RESPONSE ---"
+                                cat \"\$response_file\"
+                                echo
+                                echo "--- END OPENCLAW_RESPONSE ---"
+                            fi
+                            if [ \"\$http_code\" -lt 200 ] || [ \"\$http_code\" -ge 300 ]; then
+                                echo "OpenClaw webhook returned non-2xx status: \$http_code" >&2
+                                exit 1
+                            fi
                         """
                         env.OPENCLAW_STATUS = 'sent'
                     } else {
