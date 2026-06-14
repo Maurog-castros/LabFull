@@ -46,7 +46,7 @@ Terraform/
 6. GitHub Actions dispara el branch `minikube-deploy` y `aws-deploy` del job multibranch de Jenkins desde `ubuntu-latest` y pasa `OPENCLAW_WEBHOOK_URL` + `OPENCLAW_WEBHOOK_TOKEN` al pipeline para notificar a OpenClaw.
 7. La UI consulta `GET /api/pipeline/latest` y pinta el último build con hora de inicio, término, estado y stages.
 8. La UI consulta `GET /api/containers/status` y muestra el inventario de frontend, backend, PostgreSQL y Minikube/Ingress con detalle clicable.
-9. El dashboard de Kubernetes se publica en `https://ministack.maurocastro.cl` mediante el ingress del addon `dashboard` de Minikube.
+9. El dashboard de Kubernetes se publica en `https://ministack.maurocastro.cl` mediante el ingress del addon `dashboard` de Minikube y requiere que la DMZ Nginx enrute ese host al IP de Minikube.
 
 ### 📊 Estructura de Base de Datos
 

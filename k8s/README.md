@@ -63,6 +63,13 @@ This directory contains Kubernetes manifests for deploying the application.
    The dashboard is published at `https://ministack.maurocastro.cl` through the Minikube ingress controller.
    Kubernetes still requires a valid auth token or kubeconfig-based access for login.
 
+   If the public URL returns `maurocastro.cl DMZ proxy`, the request is still
+   stopping in the external Nginx proxy. Add a `server_name
+   ministack.maurocastro.cl` proxy route to the Minikube IP, or run:
+   ```bash
+   APPLY_PUBLIC_PROXY=1 PUBLIC_DASHBOARD_URL=https://ministack.maurocastro.cl ./scripts/deploy_minikube_labfull.sh
+   ```
+
 ## Directory Structure
 
 ```

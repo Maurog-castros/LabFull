@@ -14,6 +14,8 @@ require_var MINIKUBE_HOST
 require_var MINIKUBE_USER
 require_var PUBLIC_URL
 
+PUBLIC_DASHBOARD_URL="${PUBLIC_DASHBOARD_URL:-https://ministack.maurocastro.cl}"
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REMOTE_DIR="${K8S_DEPLOY_DIR:-/opt/labfull}"
 SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=yes)
@@ -39,7 +41,7 @@ tar -C "$ROOT_DIR" -cf - \
   | ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "mkdir -p '$REMOTE_DIR' && tar -C '$REMOTE_DIR' -xf -"
 
 echo "Deploying LabFull on Ubuntu host"
-ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "MINIKUBE_PROFILE='$MINIKUBE_PROFILE' REMOTE_DIR='$REMOTE_DIR' PUBLIC_URL='$PUBLIC_URL' bash -s" <<'REMOTE_EOF'
+ssh "${SSH_OPTS[@]}" "$SSH_TARGET" "MINIKUBE_PROFILE='${MINIKUBE_PROFILE:-}' REMOTE_DIR='$REMOTE_DIR' PUBLIC_URL='$PUBLIC_URL' PUBLIC_DASHBOARD_URL='$PUBLIC_DASHBOARD_URL' APPLY_PUBLIC_PROXY='${APPLY_PUBLIC_PROXY:-0}' bash -s" <<'REMOTE_EOF'
 set -euo pipefail
 
 export PATH="$HOME/.local/bin:$PATH"
@@ -82,7 +84,8 @@ kubectl apply -f ./k8s/backend-deployment.yaml
 kubectl apply -f ./k8s/frontend-service.yaml
 kubectl apply -f ./k8s/frontend-deployment.yaml
 kubectl apply -f ./k8s/ingress.yaml
-kubectl apply -f ./k8s/dashboard-ingress.yaml
+DASHBOARD_HOST="$(printf '%s' "${PUBLIC_DASHBOARD_URL}" | sed -E 's#^https?://##; s#/.*$##')"
+DASHBOARD_HOST="${DASHBOARD_HOST}" bash ./scripts/apply_dashboard_ingress.sh
 
 kubectl rollout restart deployment/backend-deployment
 kubectl rollout restart deployment/frontend-deployment
@@ -95,4 +98,19 @@ echo "Deployment completed inside Minikube profile ${MINIKUBE_PROFILE}"
 echo "Ingress host: ${PUBLIC_URL}"
 kubectl get ingress labfull-ingress
 kubectl get ingress -n kubernetes-dashboard ministack-dashboard-ingress
+
+if [ "${APPLY_PUBLIC_PROXY}" = "1" ]; then
+  DASHBOARD_HOST="${DASHBOARD_HOST}" MINIKUBE_PROFILE="${MINIKUBE_PROFILE}" bash ./scripts/configure_ministack_proxy.sh
+fi
+
+if command -v curl >/dev/null; then
+  echo "Checking public dashboard route: ${PUBLIC_DASHBOARD_URL}"
+  HTTP_STATUS="$(curl -k -sS -o /tmp/ministack-dashboard-check.html -w '%{http_code}' --connect-timeout 10 "${PUBLIC_DASHBOARD_URL}" || true)"
+  if [ "${HTTP_STATUS}" = "404" ] && grep -qi 'DMZ proxy' /tmp/ministack-dashboard-check.html; then
+    echo "Public proxy is not routing ${DASHBOARD_HOST} to Minikube ingress yet." >&2
+    echo "Run with APPLY_PUBLIC_PROXY=1 or add ${DASHBOARD_HOST} to the DMZ Nginx proxy." >&2
+    exit 1
+  fi
+  echo "Public dashboard HTTP status: ${HTTP_STATUS}"
+fi
 REMOTE_EOF

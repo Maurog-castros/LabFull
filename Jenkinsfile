@@ -13,6 +13,8 @@ pipeline {
         string(name: 'MINIKUBE_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
         string(name: 'MINIKUBE_PROFILE', defaultValue: 'labfull', description: 'Minikube profile used on the Ubuntu host')
         string(name: 'PUBLIC_URL', defaultValue: 'https://labfull.maurocastro.cl', description: 'Public URL exposed by the reverse proxy')
+        string(name: 'PUBLIC_DASHBOARD_URL', defaultValue: 'https://ministack.maurocastro.cl', description: 'Public Minikube dashboard URL exposed by the reverse proxy')
+        booleanParam(name: 'APPLY_PUBLIC_PROXY', defaultValue: true, description: 'Create or refresh the public Nginx route for the Minikube dashboard')
         string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: 'http://192.168.1.12:18789/hooks/agent', description: 'OpenClaw hook endpoint used to notify the agent')
         string(name: 'OPENCLAW_WEBHOOK_TOKEN', defaultValue: '', description: 'Bearer token for the OpenClaw hook endpoint')
         string(name: 'NEXT_BRANCH_NAME', defaultValue: 'aws-deploy', description: 'Branch to promote after manual validation')
@@ -111,7 +113,9 @@ pipeline {
                     "MINIKUBE_USER=${params.MINIKUBE_USER}",
                     "MINIKUBE_HOST=${params.MINIKUBE_HOST}",
                     "MINIKUBE_PROFILE=${params.MINIKUBE_PROFILE}",
-                    "PUBLIC_URL=${params.PUBLIC_URL}"
+                    "PUBLIC_URL=${params.PUBLIC_URL}",
+                    "PUBLIC_DASHBOARD_URL=${params.PUBLIC_DASHBOARD_URL}",
+                    "APPLY_PUBLIC_PROXY=${params.APPLY_PUBLIC_PROXY ? '1' : '0'}"
                 ]) {
                     sh '''
                         set -eu
@@ -131,6 +135,8 @@ pipeline {
                     echo "Checking public URL: ${PUBLIC_URL}"
                     curl -fkSs "${PUBLIC_URL}" | grep -qi "LabFull"
                     curl -fkSs "${PUBLIC_URL}/api/health" | grep -qi '"status":"healthy"'
+                    echo "Checking dashboard URL: ${PUBLIC_DASHBOARD_URL}"
+                    curl -fkSs "${PUBLIC_DASHBOARD_URL}" | grep -Eqi "kubernetes|dashboard|login"
                 '''
             }
         }
