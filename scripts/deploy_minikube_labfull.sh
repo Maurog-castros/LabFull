@@ -65,6 +65,7 @@ if ! minikube status -p "${MINIKUBE_PROFILE}" >/dev/null 2>&1; then
 fi
 
 minikube -p "${MINIKUBE_PROFILE}" addons enable ingress
+minikube -p "${MINIKUBE_PROFILE}" addons enable dashboard
 kubectl config use-context "${MINIKUBE_PROFILE}" >/dev/null
 
 eval "$(minikube -p "${MINIKUBE_PROFILE}" docker-env)"
@@ -81,6 +82,7 @@ kubectl apply -f ./k8s/backend-deployment.yaml
 kubectl apply -f ./k8s/frontend-service.yaml
 kubectl apply -f ./k8s/frontend-deployment.yaml
 kubectl apply -f ./k8s/ingress.yaml
+kubectl apply -f ./k8s/dashboard-ingress.yaml
 
 kubectl rollout restart deployment/backend-deployment
 kubectl rollout restart deployment/frontend-deployment
@@ -92,4 +94,5 @@ kubectl rollout status deployment/frontend-deployment --timeout=300s
 echo "Deployment completed inside Minikube profile ${MINIKUBE_PROFILE}"
 echo "Ingress host: ${PUBLIC_URL}"
 kubectl get ingress labfull-ingress
+kubectl get ingress -n kubernetes-dashboard ministack-dashboard-ingress
 REMOTE_EOF

@@ -37,6 +37,7 @@ This directory contains Kubernetes manifests for deploying the application.
    kubectl apply -f frontend-deployment.yaml
    kubectl apply -f frontend-service.yaml
    kubectl apply -f ingress.yaml
+   kubectl apply -f dashboard-ingress.yaml
    ```
 
 4. **Check deployment status:**
@@ -55,6 +56,13 @@ This directory contains Kubernetes manifests for deploying the application.
    curl -H 'Host: labfull.maurocastro.cl' http://<minikube-ip>/
    ```
 
+6. **Access the Minikube dashboard:**
+   ```bash
+   kubectl get ingress -n kubernetes-dashboard ministack-dashboard-ingress
+   ```
+   The dashboard is published at `https://ministack.maurocastro.cl` through the Minikube ingress controller.
+   Kubernetes still requires a valid auth token or kubeconfig-based access for login.
+
 ## Directory Structure
 
 ```
@@ -67,7 +75,8 @@ k8s/
 ├── backend-service.yaml
 ├── frontend-deployment.yaml
 ├── frontend-service.yaml
-└── ingress.yaml
+├── ingress.yaml
+└── dashboard-ingress.yaml
 ```
 
 ## Customization
