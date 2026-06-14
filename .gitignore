@@ -17,3 +17,5 @@ terraform.tfstate.backup
 .DS_Store
 Thumbs.db
 .env
+.tmp/
+backend-fastapi/__pycache__/
