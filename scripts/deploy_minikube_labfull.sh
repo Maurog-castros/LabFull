@@ -74,6 +74,9 @@ kubectl apply -f ./k8s/frontend-service.yaml
 kubectl apply -f ./k8s/frontend-deployment.yaml
 kubectl apply -f ./k8s/ingress.yaml
 
+kubectl rollout restart deployment/backend-deployment
+kubectl rollout restart deployment/frontend-deployment
+
 kubectl rollout status deployment/postgres-deployment --timeout=300s
 kubectl rollout status deployment/backend-deployment --timeout=300s
 kubectl rollout status deployment/frontend-deployment --timeout=300s
