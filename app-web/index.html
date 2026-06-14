@@ -23,6 +23,11 @@
             position: relative;
         }
 
+        body.dashboard-active {
+            align-items: flex-start;
+            padding: 1rem 0;
+        }
+
         /* Background grid effect */
         body::before {
             content: '';
@@ -1001,6 +1006,12 @@
                 pipelineDashboard.classList.toggle('hidden', !visible);
                 modeSwitch.classList.toggle('hidden', visible);
                 document.body.classList.toggle('dashboard-active', visible);
+                if (visible) {
+                    statusMessage.style.display = 'none';
+                    requestAnimationFrame(() => {
+                        pipelineDashboard.scrollIntoView({ block: 'start', behavior: 'auto' });
+                    });
+                }
             }
 
             function renderStages(stages) {
@@ -1297,7 +1308,7 @@
                     registerForm.classList.add('hidden');
                     renderPipeline(pipeline, username);
                     renderContainers(containers);
-                    showMessage(`✅ Panel cargado para ${username}`, 'status-success');
+                    statusMessage.style.display = 'none';
                 } catch (error) {
                     showMessage(`❌ Error: ${error.message}`, 'status-error');
                 } finally {
