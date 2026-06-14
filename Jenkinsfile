@@ -13,7 +13,8 @@ pipeline {
         string(name: 'MINIKUBE_USER', defaultValue: 'mauro', description: 'SSH user for the Ubuntu LAN host')
         string(name: 'MINIKUBE_PROFILE', defaultValue: 'labfull', description: 'Minikube profile used on the Ubuntu host')
         string(name: 'PUBLIC_URL', defaultValue: 'https://labfull.maurocastro.cl', description: 'Public URL exposed by the reverse proxy')
-        string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: '', description: 'OpenClaw webhook URL used to notify the agent')
+        string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: 'http://192.168.1.12:18789/hooks/agent', description: 'OpenClaw hook endpoint used to notify the agent')
+        string(name: 'OPENCLAW_WEBHOOK_TOKEN', defaultValue: '', description: 'Bearer token for the OpenClaw hook endpoint')
         string(name: 'NEXT_BRANCH_NAME', defaultValue: 'aws-deploy', description: 'Branch to promote after manual validation')
         string(name: 'NEXT_PIPELINE_SIGNAL', defaultValue: '1', description: 'Approval token the agent must return to start AWS')
         string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region for the AWS deployment')
@@ -125,16 +126,17 @@ pipeline {
             }
             steps {
                 script {
-                    if (params.OPENCLAW_WEBHOOK_URL) {
+                    if (params.OPENCLAW_WEBHOOK_URL && params.OPENCLAW_WEBHOOK_TOKEN) {
                         sh """
                             set -eu
                             response_file=\"${env.WORKSPACE}/.openclaw-response-minikube.txt\"
                             rm -f \"\$response_file\"
                             payload=\$(cat <<EOF
-{"app":"${APP_NAME}","status":"success","message":"LabFull is now live at ${params.PUBLIC_URL}. When validation passes, reply with ${params.NEXT_PIPELINE_SIGNAL} and promote branch ${params.NEXT_BRANCH_NAME} for AWS.","next_branch":"${params.NEXT_BRANCH_NAME}","approval_signal":"${params.NEXT_PIPELINE_SIGNAL}","public_url":"${params.PUBLIC_URL}"}
+{"agentId":"jenki","name":"Jenki","deliver":true,"channel":"whatsapp","to":"+56929683524","message":"LabFull ya quedó arriba en ${params.PUBLIC_URL}. Cuando termines la validación manual, responde ${params.NEXT_PIPELINE_SIGNAL} para iniciar ${params.NEXT_BRANCH_NAME}."}
 EOF
 )
                             http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
+                                -H \"Authorization: Bearer ${params.OPENCLAW_WEBHOOK_TOKEN}\" \\
                                 -H 'Content-Type: application/json' \\
                                 -d "\$payload" \\
                                 "${params.OPENCLAW_WEBHOOK_URL}")
@@ -152,7 +154,7 @@ EOF
                         """
                         env.OPENCLAW_STATUS = 'sent'
                     } else {
-                        echo "OPENCLAW_WEBHOOK_URL not configured; skipping agent notification"
+                        echo "OPENCLAW_WEBHOOK_URL or OPENCLAW_WEBHOOK_TOKEN not configured; skipping agent notification"
                         env.OPENCLAW_STATUS = 'skipped'
                     }
                 }
@@ -223,16 +225,17 @@ EOF
             }
             steps {
                 script {
-                    if (params.OPENCLAW_WEBHOOK_URL) {
+                    if (params.OPENCLAW_WEBHOOK_URL && params.OPENCLAW_WEBHOOK_TOKEN) {
                         sh """
                             set -eu
                             response_file=\"${env.WORKSPACE}/.openclaw-response-aws.txt\"
                             rm -f \"\$response_file\"
                             payload=\$(cat <<EOF
-{"app":"${APP_NAME}","status":"success","message":"AWS deployment finished for branch aws-deploy: FE, BE and BD on RDS."}
+{"agentId":"jenki","name":"Jenki","deliver":true,"channel":"whatsapp","to":"+56929683524","message":"AWS deployment terminado para LabFull: FE, BE y BD/RDS listos."}
 EOF
 )
                             http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
+                                -H \"Authorization: Bearer ${params.OPENCLAW_WEBHOOK_TOKEN}\" \\
                                 -H 'Content-Type: application/json' \\
                                 -d "\$payload" \\
                                 "${params.OPENCLAW_WEBHOOK_URL}")
@@ -250,7 +253,7 @@ EOF
                         """
                         env.OPENCLAW_STATUS = 'sent'
                     } else {
-                        echo "OPENCLAW_WEBHOOK_URL not configured; skipping notification"
+                        echo "OPENCLAW_WEBHOOK_URL or OPENCLAW_WEBHOOK_TOKEN not configured; skipping notification"
                         env.OPENCLAW_STATUS = 'skipped'
                     }
                 }

@@ -11,7 +11,8 @@ pipeline {
         string(name: 'APPROVAL_SIGNAL', defaultValue: '1', description: 'Must be 1 to start the AWS deployment')
         string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region for the AWS deployment')
         string(name: 'AWS_RDS_HOST', defaultValue: '', description: 'RDS endpoint or CNAME used by backend and DB migration')
-        string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: '', description: 'Optional webhook to notify ClawCode when AWS deployment finishes')
+        string(name: 'OPENCLAW_WEBHOOK_URL', defaultValue: 'http://192.168.1.12:18789/hooks/agent', description: 'Optional OpenClaw hook endpoint to notify ClawCode when AWS deployment finishes')
+        string(name: 'OPENCLAW_WEBHOOK_TOKEN', defaultValue: '', description: 'Bearer token for the OpenClaw hook endpoint')
     }
 
     environment {
@@ -86,16 +87,17 @@ pipeline {
         stage('Notify ClawCode') {
             steps {
                 script {
-                    if (params.OPENCLAW_WEBHOOK_URL) {
+                    if (params.OPENCLAW_WEBHOOK_URL && params.OPENCLAW_WEBHOOK_TOKEN) {
                         sh """
                             set -eu
                             response_file=\"${env.WORKSPACE}/.openclaw-response-aws.txt\"
                             rm -f \"\$response_file\"
                             payload=\$(cat <<EOF
-{"app":"${APP_NAME}","status":"success","message":"AWS deployment finished for FE, BE and BD on RDS."}
+{"agentId":"jenki","name":"Jenki","deliver":true,"channel":"whatsapp","to":"+56929683524","message":"AWS deployment terminado para LabFull: FE, BE y BD/RDS listos."}
 EOF
 )
                             http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
+                                -H \"Authorization: Bearer ${params.OPENCLAW_WEBHOOK_TOKEN}\" \\
                                 -H 'Content-Type: application/json' \\
                                 -d "\$payload" \\
                                 "${params.OPENCLAW_WEBHOOK_URL}")
@@ -113,7 +115,7 @@ EOF
                         """
                         env.OPENCLAW_STATUS = 'sent'
                     } else {
-                        echo "OPENCLAW_WEBHOOK_URL not configured; skipping notification"
+                        echo "OPENCLAW_WEBHOOK_URL or OPENCLAW_WEBHOOK_TOKEN not configured; skipping notification"
                         env.OPENCLAW_STATUS = 'skipped'
                     }
                 }
@@ -124,17 +126,18 @@ EOF
     post {
         always {
             script {
-                if (params.OPENCLAW_WEBHOOK_URL && env.OPENCLAW_STATUS != 'sent') {
+                if (params.OPENCLAW_WEBHOOK_URL && params.OPENCLAW_WEBHOOK_TOKEN && env.OPENCLAW_STATUS != 'sent') {
                     def buildResult = currentBuild.currentResult ?: 'UNKNOWN'
                     sh """
                         set -eu
                         response_file=\"${env.WORKSPACE}/.openclaw-response-final.txt\"
                         rm -f \"\$response_file\"
                         payload=\$(cat <<EOF
-{"app":"${APP_NAME}","status":"${buildResult.toLowerCase()}","message":"AWS pipeline finished for FE, BE and BD on RDS with result ${buildResult}."}
+{"agentId":"jenki","name":"Jenki","deliver":true,"channel":"whatsapp","to":"+56929683524","message":"AWS pipeline finalizó con estado ${buildResult}. FE, BE y BD/RDS quedaron procesados."}
 EOF
 )
                         http_code=\$(curl -sS -o \"\$response_file\" -w \"%{http_code}\" -X POST \\
+                            -H \"Authorization: Bearer ${params.OPENCLAW_WEBHOOK_TOKEN}\" \\
                             -H 'Content-Type: application/json' \\
                             -d "\$payload" \\
                             "${params.OPENCLAW_WEBHOOK_URL}")

@@ -26,7 +26,8 @@ The workflows `.github/workflows/trigger-jenkins-minikube.yml` and `.github/work
 | `JENKINS_JOB_NAME` | Jenkins job name triggered by GitHub Actions, for example `LabFull-AWS-CD` |
 | `JENKINS_USER` | Jenkins user with API token access |
 | `JENKINS_API_TOKEN` | Jenkins API token |
-| `OPENCLAW_WEBHOOK_URL` | Optional OpenClaw webhook passed to Jenkins for WhatsApp notification |
+| `OPENCLAW_WEBHOOK_URL` | OpenClaw hook endpoint, for example `http://192.168.1.12:18789/hooks/agent` |
+| `OPENCLAW_WEBHOOK_TOKEN` | Bearer token accepted by the OpenClaw hook endpoint |
 
 ## Expected flow
 
