@@ -37,4 +37,4 @@ jobs:
             --data-urlencode "gitBranch=${GITHUB_REF_NAME}" \
             --data-urlencode "gitCommit=${GITHUB_SHA}" \
             "${extra_args[@]}" \
-            "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/job/minikube-deploy/buildWithParameters"
+            "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters"
