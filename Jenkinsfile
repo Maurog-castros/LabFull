@@ -35,7 +35,11 @@ pipeline {
         stage('Resolve Branch') {
             steps {
                 script {
-                    env.PIPELINE_BRANCH = env.BRANCH_NAME ?: (params.gitBranch?.trim() ?: 'main')
+                    def requestedBranch = params.gitBranch?.trim()
+                    if (!requestedBranch && env.JOB_NAME == 'LabFull-platform-smoke') {
+                        requestedBranch = 'minikube-deploy'
+                    }
+                    env.PIPELINE_BRANCH = env.BRANCH_NAME ?: (requestedBranch ?: 'main')
                     env.PIPELINE_COMMIT = params.gitCommit?.trim() ?: ''
                     def allowedBranches = ['main', 'minikube-deploy', 'aws-deploy']
                     if (!allowedBranches.contains(env.PIPELINE_BRANCH)) {

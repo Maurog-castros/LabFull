@@ -43,6 +43,15 @@ jobs:
             "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/buildWithParameters")"
           echo "JENKINS_HTTP_CODE=${http_code}"
           if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 400 ]; then
+            if [ "${http_code}" = "400" ] && grep -qi "not parameterized" "${response_file}"; then
+              echo "Jenkins job is not parameterized; retrying plain build endpoint."
+              http_code="$(curl -sS -o "${response_file}" -w "%{http_code}" -u "${JENKINS_USER}:${JENKINS_API_TOKEN}" \
+                -X POST \
+                "${JENKINS_URL}/job/${JENKINS_JOB_NAME}/build")"
+              echo "JENKINS_FALLBACK_HTTP_CODE=${http_code}"
+            fi
+          fi
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 400 ]; then
             echo "--- JENKINS_RESPONSE ---"
             cat "${response_file}"
             echo
