@@ -19,9 +19,10 @@ jobs:
           OPENCLAW_WEBHOOK_URL: ${{ secrets.OPENCLAW_WEBHOOK_URL }}
         run: |
           set -euo pipefail
+          : "${JENKINS_JOB_NAME:=LabFull-AWS-CD}"
 
-          if [ -z "${JENKINS_URL:-}" ] || [ -z "${JENKINS_JOB_NAME:-}" ] || [ -z "${JENKINS_USER:-}" ] || [ -z "${JENKINS_API_TOKEN:-}" ]; then
-            echo "Missing Jenkins secrets. Set JENKINS_URL, JENKINS_JOB_NAME, JENKINS_USER and JENKINS_API_TOKEN."
+          if [ -z "${JENKINS_URL:-}" ] || [ -z "${JENKINS_USER:-}" ] || [ -z "${JENKINS_API_TOKEN:-}" ]; then
+            echo "Missing Jenkins secrets. Set JENKINS_URL, JENKINS_USER and JENKINS_API_TOKEN."
             exit 1
           fi
 
