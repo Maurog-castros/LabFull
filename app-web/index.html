@@ -110,6 +110,41 @@
         /* Form */
         .login-form {
             position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .mode-switch {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .mode-btn {
+            padding: 12px 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 255, 255, 0.25);
+            background: rgba(0, 255, 255, 0.06);
+            color: #c8f8ff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 0 14px rgba(0, 255, 255, 0.22);
+        }
+
+        .hidden {
+            display: none;
         }
 
         .input-group {
@@ -146,6 +181,25 @@
 
         .input-group input::placeholder {
             color: rgba(255, 255, 255, 0.3);
+        }
+
+        .secondary-action {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid rgba(0, 255, 255, 0.35);
+            background: rgba(0, 255, 255, 0.06);
+            color: #d6feff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .secondary-action:hover {
+            background: rgba(0, 255, 255, 0.12);
         }
 
         /* Cyberpunk scanline effect */
@@ -272,6 +326,11 @@
             <p>Demo pública de CI/CD v1.0</p>
         </div>
 
+        <div class="mode-switch" role="tablist" aria-label="Modo de acceso">
+            <button type="button" class="mode-btn active" id="loginModeBtn">Ingresar</button>
+            <button type="button" class="mode-btn" id="registerModeBtn">Registrar</button>
+        </div>
+
         <form class="login-form" id="loginForm">
             <div class="input-group">
                 <label for="username">USUARIO</label>
@@ -280,11 +339,36 @@
 
             <button type="submit" class="login-btn" id="loginBtn">
                 INGRESAR
+                </button>
+
+                <div class="loader" id="loader"></div>
+                
+                <div class="status-message" id="statusMessage"></div>
+        </form>
+
+        <form class="login-form hidden" id="registerForm">
+            <div class="input-group">
+                <label for="regNombre">NOMBRE</label>
+                <input type="text" id="regNombre" name="nombre" placeholder="Nombre..." required autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label for="regApellido">APELLIDO</label>
+                <input type="text" id="regApellido" name="apellido" placeholder="Apellido..." required autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label for="regUsername">USERNAME</label>
+                <input type="text" id="regUsername" name="username" placeholder="Usuario para registrar..." required autocomplete="off">
+            </div>
+
+            <button type="submit" class="login-btn" id="registerBtn">
+                REGISTRAR
             </button>
 
-            <div class="loader" id="loader"></div>
-            
-            <div class="status-message" id="statusMessage"></div>
+            <button type="button" class="secondary-action" id="backToLoginBtn">
+                Volver a ingresar
+            </button>
         </form>
 
         <div class="login-footer">
@@ -295,7 +379,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
             const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const loginModeBtn = document.getElementById('loginModeBtn');
+            const registerModeBtn = document.getElementById('registerModeBtn');
+            const backToLoginBtn = document.getElementById('backToLoginBtn');
             const loader = document.getElementById('loader');
             const statusMessage = document.getElementById('statusMessage');
 
@@ -313,31 +402,42 @@
             const LABFULL_CONFIG = window.__LABFULL_CONFIG__ || {};
             const API_BASE_URL = LABFULL_CONFIG.apiBaseUrl || '/api';
 
-            // Validación de usuario (simulada - en producción se conectará a PostgreSQL)
-            async function validateUser(username) {
-                try {
-                    // Simular llamada al backend
-                    const response = await fetch(`${API_BASE_URL}/personas`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            nombre: username, 
-                            apellido: '', 
-                            correo: `${username}@dblab.local` 
-                        })
-                    });
+            function setMode(mode) {
+                const isRegister = mode === 'register';
+                loginForm.classList.toggle('hidden', isRegister);
+                registerForm.classList.toggle('hidden', !isRegister);
+                loginModeBtn.classList.toggle('active', !isRegister);
+                registerModeBtn.classList.toggle('active', isRegister);
+            }
 
-                    if (response.ok) {
-                        return true;
-                    }
-                    return false;
+            async function pingBackend() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/health`);
+                    return response.ok;
                 } catch (error) {
-                    // Si el backend no está disponible, mostrar mensaje de conexión
                     return null;
                 }
             }
 
-            // Manejo del formulario
+            async function registerPerson(payload) {
+                const response = await fetch(`${API_BASE_URL}/registrar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json().catch(() => null);
+                if (!response.ok) {
+                    const detail = data && data.detail ? data.detail : 'No se pudo registrar';
+                    throw new Error(detail);
+                }
+                return data;
+            }
+
+            loginModeBtn.addEventListener('click', () => setMode('login'));
+            registerModeBtn.addEventListener('click', () => setMode('register'));
+            backToLoginBtn.addEventListener('click', () => setMode('login'));
+
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
@@ -354,25 +454,52 @@
                 statusMessage.style.display = 'none';
 
                 try {
-                    const isValid = await validateUser(username);
+                    const backendReady = await pingBackend();
 
-                    if (isValid === null) {
+                    if (backendReady === null) {
                         showMessage('⚠️ API no disponible. Modo demo activo.', 'status-success');
-                        // Simular éxito si el backend no responde
                         setTimeout(() => {
                             showMessage(`✅ Acceso concedido: ${username}`, 'status-success');
                             loginBtn.disabled = false;
                             loader.style.display = 'none';
                         }, 1500);
-                    } else if (isValid) {
-                        showMessage(`✅ Usuario ${username} validado correctamente`, 'status-success');
                     } else {
-                        showMessage('❌ Usuario no encontrado en la base de datos', 'status-error');
+                        showMessage(`✅ Backend disponible. Usuario ${username} listo para registrar.`, 'status-success');
                     }
                 } catch (error) {
                     showMessage(`❌ Error: ${error.message}`, 'status-error');
                 } finally {
                     loginBtn.disabled = false;
+                    loader.style.display = 'none';
+                }
+            });
+
+            registerForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const nombre = document.getElementById('regNombre').value.trim();
+                const apellido = document.getElementById('regApellido').value.trim();
+                const username = document.getElementById('regUsername').value.trim();
+
+                if (!nombre || !apellido || !username) {
+                    showMessage('⚠️ Completa nombre, apellido y username', 'status-error');
+                    return;
+                }
+
+                registerBtn.disabled = true;
+                loader.style.display = 'block';
+                statusMessage.style.display = 'none';
+
+                try {
+                    const result = await registerPerson({ nombre, apellido, username });
+                    const fullName = result?.data?.persona ? `${result.data.persona.nombre} ${result.data.persona.apellido}` : `${nombre} ${apellido}`;
+                    showMessage(`✅ Registro creado: ${fullName}`, 'status-success');
+                    registerForm.reset();
+                    setMode('login');
+                } catch (error) {
+                    showMessage(`❌ ${error.message}`, 'status-error');
+                } finally {
+                    registerBtn.disabled = false;
                     loader.style.display = 'none';
                 }
             });
@@ -384,6 +511,8 @@
                     setTimeout(() => loginForm.classList.remove('submitting'), 100);
                 }
             });
+
+            setMode('login');
         });
     </script>
 </body>

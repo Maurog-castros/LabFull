@@ -32,7 +32,7 @@ Terraform/
 | Componente | Descripción |
 |------------|-------------|
 | **Frontend** | Login cyberpunk con animaciones modernas, validación de usuario |
-| **Backend** | FastAPI con endpoints para personas y usuarios |
+| **Backend** | FastAPI con endpoints para personas, usuarios y alta transaccional |
 | **Base de Datos** | PostgreSQL (DBLAB) con tablas `personas` y `usuarios` |
 | **Infraestructura** | Terraform para gestión de recursos |
 
@@ -107,6 +107,7 @@ python -m http.server 8080
 | GET | `/health` | Health check |
 | POST | `/personas` | Crear persona |
 | POST | `/usuarios` | Crear usuario |
+| POST | `/registrar` | Crear persona y usuario en una sola operación |
 | GET | `/personas/{id}` | Obtener persona por ID |
 
 ---

@@ -18,6 +18,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 | GET | `/health` | Health check |
 | POST | `/personas` | Crear persona |
 | POST | `/usuarios` | Crear usuario |
+| POST | `/registrar` | Crear persona y usuario en una sola transacción |
 | GET | `/personas/{id}` | Obtener persona por ID |
 
 ## Publicación

@@ -11,6 +11,9 @@ services:
     environment:
       - DB_HOST=192.168.1.12
       - DB_NAME=DBLAB
+      - DB_USER=postgres
+      - DB_PASSWORD=password123
+      - DB_PORT=5432
     depends_on:
       - postgres
     healthcheck:
